@@ -29,11 +29,11 @@ public class Chat {
 
     @ManyToOne
     @JoinColumn(name = "room_id")
-    private Room roomId;  // 방 ID
+    private Room room;  // 방 ID
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User userId;  // 유저 ID
+    private User user;  // 유저 ID
 
     @Column(length = 30)
     private String nickname;  // 유저 닉네임
