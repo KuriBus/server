@@ -2,29 +2,15 @@ version: '3.8'
 
 services:
   app:
-    image: your-docker-id/spring-app:latest
+    image: ${DOCKER_USERNAME}/spring-app:latest
     ports:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev  # 개발 환경 프로파일
-      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/your_database_name
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - SPRING_DATASOURCE_URL=${RDS_URL}
+      - SPRING_DATASOURCE_USERNAME=${RDS_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${RDS_PASSWORD}
     depends_on:
       - db  # DB 컨테이너가 먼저 실행되도록 설정
     volumes:
       - ./logs:/app/logs  # 개발용 로그 볼륨 마운트
-
-  db:
-    image: mysql:8.0
-    container_name: mysql-container
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: your_database_name
-      MYSQL_USER: root
-      MYSQL_PASSWORD: rootpassword
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./db/data:/var/lib/mysql  # DB 데이터를 로컬에 저장하여 유지
