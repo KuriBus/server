@@ -6,7 +6,6 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev  # 개발 환경 프로파일
       - SPRING_DATASOURCE_URL=${RDS_URL}
       - SPRING_DATASOURCE_USERNAME=${RDS_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${RDS_PASSWORD}
