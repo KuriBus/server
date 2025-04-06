@@ -52,6 +52,11 @@ jobs:
 
       # 6) Docker Compose 빌드 및 푸시
       - name: Build and push with Docker Compose
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          RDS_URL: ${{ secrets.RDS_URL }}
+          RDS_USERNAME: ${{ secrets.RDS_USERNAME }}
+          RDS_PASSWORD: ${{ secrets.RDS_PASSWORD }}
         run: |
           # 서비스 이름을 태그에 포함시켜 이미지 빌드 및 푸시
           docker compose -f docker-compose-dev.yml build
@@ -72,7 +77,7 @@ jobs:
             docker compose -f docker-compose-dev.yml down
             
             # 최신 이미지 풀
-            docker pull ${{ secrets.DOCKER_USERNAME }}/your-service-name:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
             
             # 새 컨테이너 실행 (환경 변수 주입)
             docker compose -f docker-compose-dev.yml up -d
