@@ -1,0 +1,100 @@
+name: Java CD
+
+on:
+  pull_request:
+    branches: [ develop ]
+    # 다음 파일들이 변경되었을 때는 워크플로우를 실행하지 않음
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) 워크플로우가 실행되는 러너(가상 머신)에 해당 리포지토리의 코드를 클론하기 위해 사용
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Gradle 의존성에 대한 캐싱 추가 (매 빌드마다 의존성을 다시 다운로드하게 되어 빌드 시간이 길어지는 걸 방지)
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle', '**/gradle-wrapper.properties') }}
+
+      # 2) JDK 17 버전 설치
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3)권한 부여
+      - name: Grant gradlew permission
+        run: chmod +x gradlew
+
+      # 4) SSH 터널링 설정
+      - name: Set up SSH tunnel to RDS
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$EC2_PRIVATE_KEY" > ~/.ssh/ec2_key.pem
+          chmod 600 ~/.ssh/ec2_key.pem
+          # 백그라운드에서 SSH 터널 실행
+          ssh -o StrictHostKeyChecking=no -fN -L 3306:$RDS_ENDPOINT:3306 $EC2_USERNAME@$EC2_HOST -i ~/.ssh/ec2_key.pem
+
+      # 5) .build시작
+      # 빌드와 테스트를 함께 실행
+      - name: Build and Test
+        run: ./gradlew clean build
+
+      # 6) Docker Hub 로그인
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 7) Docker Compose 빌드 및 푸시
+      - name: Build and push with Docker Compose
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          RDS_URL: ${{ secrets.RDS_URL }}
+          RDS_USERNAME: ${{ secrets.RDS_USERNAME }}
+          RDS_PASSWORD: ${{ secrets.RDS_PASSWORD }}
+        run: |
+          # 서비스 이름을 태그에 포함시켜 이미지 빌드 및 푸시
+          docker compose -f docker-compose-dev.yml build
+          docker compose -f docker-compose-dev.yml push
+
+      # 8) EC2에 배포
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            # Docker Hub 로그인
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            
+            # 기존 컨테이너 정리
+            docker compose -f docker-compose-dev.yml down
+            
+            # 최신 이미지 풀
+            docker pull ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
+            
+            # 새 컨테이너 실행 (환경 변수 주입)
+            docker compose -f docker-compose-dev.yml up -d
+            
+            # 사용하지 않는 이미지 정리
+            docker image prune -af

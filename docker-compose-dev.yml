@@ -1,0 +1,11 @@
+services:
+  app:
+    image: ${DOCKER_USERNAME}/spring-app:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=${RDS_URL}
+      - SPRING_DATASOURCE_USERNAME=${RDS_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${RDS_PASSWORD}
+    volumes:
+      - ./logs:/app/logs  # 개발용 로그 볼륨 마운트

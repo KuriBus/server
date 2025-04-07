@@ -1,0 +1,58 @@
+name: Java CI
+
+# Test
+# 워크플로우 트리거 조건 설정
+on:
+  pull_request:
+    # develop 브랜치에 대한 PR일 때만 실행
+    branches: [ develop ]
+    # 다음 파일들이 변경되었을 때는 워크플로우를 실행하지 않음
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+
+# GitHub Actions 워크플로우의 권한 설정
+permissions:
+  # 리포지토리 콘텐츠에 대한 읽기 권한만 부여
+  contents: read
+  checks: write
+  pull-requests: write # PR 코멘트를 위한 권한 추가
+
+jobs:
+  build-test:
+    # Ubuntu 최신 버전에서 실행
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) 워크플로우 실행 전 기본적으로 체크아웃 필요
+      - uses: actions/checkout@v3
+
+      # Gradle 의존성에 대한 캐싱 추가 (매 빌드마다 의존성을 다시 다운로드하게 되어 빌드 시간이 길어지는 걸 방지)
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 2) JDK 17 버전 설치
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3)권한 부여
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+        shell: bash
+
+      # 4) .build시작
+      # 빌드와 테스트를 함께 실행
+      - name: Build and Test with Gradle
+        run: ./gradlew clean build
+        shell: bash
