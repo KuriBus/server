@@ -15,7 +15,7 @@ spring:
         jdbc:
           time_zone: Asia/Seoul         # DB 시간대 강제 지정
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     generate-ddl: false
   sql:
     init:

@@ -11,10 +11,14 @@ import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Builder
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
@@ -26,11 +30,14 @@ public class User {
     @Column(unique = true)
     private String nickname;
 
-    @Column
+    @Column(nullable = false)
     private String ipAddress;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @ManyToOne
-    @JoinColumn(name = "room_id", nullable = false)
+    @JoinColumn(name = "room_id")
     private Room room;
 
 }
