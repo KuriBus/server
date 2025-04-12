@@ -1,6 +1,7 @@
 services:
   app:
-    image: ${DOCKER_USERNAME}/server:latest
+    build: .
+    image: ${DOCKER_USERNAME}/server:latest  # .env 파일의 변수 사용
     ports:
       - "8080:8080"
     environment:
