@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${DOCKER_USERNAME}/spring-app:latest
+    image: ${DOCKER_USERNAME}/server:latest
     ports:
       - "8080:8080"
     environment:
