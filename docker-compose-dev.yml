@@ -4,6 +4,10 @@ services:
     image: ${DOCKER_USERNAME}/server:latest  # .env 파일의 변수 사용
     ports:
       - "8080:8080"
+    environment:
+      - RDS_URL=${RDS_URL}
+      - RDS_USERNAME=${RDS_USERNAME}
+      - RDS_PASSWORD=${RDS_PASSWORD}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s
