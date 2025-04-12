@@ -119,7 +119,7 @@ jobs:
             docker compose -f docker-compose-dev.yml down
             
             # 최신 이미지 풀
-            docker pull ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/server:latest
             
             # 새 컨테이너 실행 (환경 변수 주입)
             docker compose -f docker-compose-dev.yml up -d
