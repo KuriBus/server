@@ -34,11 +34,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3)권한 부여
-      - name: Grant gradlew permission
-        run: chmod +x gradlew
+      # 4) gradlew 실행 권한 부여 및 빌드 시작
+      - name: Grant gradlew permission and build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build
 
-      # 4) SSH 터널링 설정
+      # 5) SSH 터널링 설정 (RDS 연결)
       - name: Set up SSH tunnel to RDS
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -52,27 +54,18 @@ jobs:
           # 백그라운드에서 SSH 터널 실행
           ssh -o StrictHostKeyChecking=no -fN -L 3306:$RDS_ENDPOINT:3306 $EC2_USERNAME@$EC2_HOST -i ~/.ssh/ec2_key.pem
 
-      # 5) build시작
-      # 빌드와 테스트를 함께 실행
-      - name: Build and Test
-        run: ./gradlew clean build
-
-      # 6) Docker Hub 로그인
+      # 6) Docker Hub 로그인 (프라이빗 레포지토리 접근)
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 7) Docker Compose 빌드 및 푸시
+      # 7) Docker Compose 빌드 및 푸시 (이미지 이름 명시)
       - name: Build and push with Docker Compose
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          RDS_URL: ${{ secrets.RDS_URL }}
-          RDS_USERNAME: ${{ secrets.RDS_USERNAME }}
-          RDS_PASSWORD: ${{ secrets.RDS_PASSWORD }}
         run: |
-          # 서비스 이름을 태그에 포함시켜 이미지 빌드 및 푸시
           docker compose -f docker-compose-dev.yml build
           docker compose -f docker-compose-dev.yml push
 
@@ -87,42 +80,18 @@ jobs:
             docker-compose-dev.yml
           target: "~"
 
-      # .env도 워크플로우 내에서 생성해 EC2로 복사(직접 EC2에 들어가서 .env 만들지 않고 워크플로우 내에서 생성)
-      - name: Create and copy .env to EC2
-        run: |
-          echo "RDS_URL=${{ secrets.RDS_URL }}" > .env
-          echo "RDS_USERNAME=${{ secrets.RDS_USERNAME }}" >> .env
-          echo "RDS_PASSWORD=${{ secrets.RDS_PASSWORD }}" >> .env
-        shell: bash
-
-      - name: Copy .env file to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: ".env"
-          target: "~"
-
-      # 9) EC2에서 Docker Compose 실행
-      - name: Deploy to EC2
+      # 9) EC2에서 Docker Compose 실행 및 배포
+      - name: Deploy to EC2 and start containers
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
-            # Docker Hub 로그인
             echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
             
-            # 기존 컨테이너 정리
-            docker compose -f docker-compose-dev.yml down
+            docker compose -f ~/docker-compose-dev.yml down || true
             
-            # 최신 이미지 풀
-            docker pull ${{ secrets.DOCKER_USERNAME }}/server:latest
+            docker compose -f ~/docker-compose-dev.yml up -d --remove-orphans
             
-            # 새 컨테이너 실행 (환경 변수 주입)
-            docker compose -f docker-compose-dev.yml up -d
-            
-            # 사용하지 않는 이미지 정리
-            docker image prune -af
+            docker image prune -af  # 불필요한 이미지 정리 (선택)
