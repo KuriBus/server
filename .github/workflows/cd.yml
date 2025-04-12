@@ -52,7 +52,7 @@ jobs:
           # 백그라운드에서 SSH 터널 실행
           ssh -o StrictHostKeyChecking=no -fN -L 3306:$RDS_ENDPOINT:3306 $EC2_USERNAME@$EC2_HOST -i ~/.ssh/ec2_key.pem
 
-      # 5) .build시작
+      # 5) build시작
       # 빌드와 테스트를 함께 실행
       - name: Build and Test
         run: ./gradlew clean build
@@ -76,7 +76,35 @@ jobs:
           docker compose -f docker-compose-dev.yml build
           docker compose -f docker-compose-dev.yml push
 
-      # 8) EC2에 배포
+      # 8) docker-compose-dev.yml, .env 파일 EC2로 복사
+      - name: Copy compose files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          source: |
+            docker-compose-dev.yml
+          target: "~"
+
+      # .env도 워크플로우 내에서 생성해 EC2로 복사(직접 EC2에 들어가서 .env 만들지 않고 워크플로우 내에서 생성)
+      - name: Create and copy .env to EC2
+        run: |
+          echo "RDS_URL=${{ secrets.RDS_URL }}" > .env
+          echo "RDS_USERNAME=${{ secrets.RDS_USERNAME }}" >> .env
+          echo "RDS_PASSWORD=${{ secrets.RDS_PASSWORD }}" >> .env
+        shell: bash
+
+      - name: Copy .env file to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          source: ".env"
+          target: "~"
+
+      # 9) EC2에서 Docker Compose 실행
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
