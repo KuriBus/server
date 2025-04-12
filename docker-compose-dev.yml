@@ -2,8 +2,6 @@ services:
   app:
     build: .
     image: ${DOCKER_USERNAME}/server:latest  # .env 파일의 변수 사용
-    env_file:
-      - ./.env  # .env 파일 참조
     ports:
       - "8080:8080"
     healthcheck:
