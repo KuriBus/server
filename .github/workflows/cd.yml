@@ -40,28 +40,14 @@ jobs:
           chmod +x gradlew
           ./gradlew clean build
 
-      # 5) SSH 터널링 설정 (RDS 연결)
-      - name: Set up SSH tunnel to RDS
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-          RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$EC2_PRIVATE_KEY" > ~/.ssh/ec2_key.pem
-          chmod 600 ~/.ssh/ec2_key.pem
-          # 백그라운드에서 SSH 터널 실행
-          ssh -o StrictHostKeyChecking=no -fN -L 3306:$RDS_ENDPOINT:3306 $EC2_USERNAME@$EC2_HOST -i ~/.ssh/ec2_key.pem
-
-      # 6) Docker Hub 로그인 (프라이빗 레포지토리 접근)
+      # 5) Docker Hub 로그인 (프라이빗 레포지토리 접근)
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 7) Docker Compose 빌드 및 푸시 (이미지 이름 명시)
+      # 6) Docker Compose 빌드 및 푸시 (이미지 이름 명시)
       - name: Build and push with Docker Compose
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -69,7 +55,7 @@ jobs:
           docker compose -f docker-compose-dev.yml build
           docker compose -f docker-compose-dev.yml push
 
-      # 8) docker-compose-dev.yml, .env 파일 EC2로 복사
+      # 7) docker-compose-dev.yml 파일 EC2로 복사
       - name: Copy compose files to EC2
         uses: appleboy/scp-action@master
         with:
@@ -80,7 +66,7 @@ jobs:
             docker-compose-dev.yml
           target: "~"
 
-      # 9) EC2에서 Docker Compose 실행 및 배포
+      # 8) EC2에서 Docker Compose 실행 및 배포
       - name: Deploy to EC2 and start containers
         uses: appleboy/ssh-action@master
         with:
@@ -90,8 +76,11 @@ jobs:
           script: |
             echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
             
+            # EC2에서 기존 컨테이너를 중지하고 삭제 (선택)
             docker compose -f ~/docker-compose-dev.yml down || true
+
+            # EC2에서 Docker Compose를 실행하면서 .env 파일을 사용하도록 --env-file 옵션 추가
+            docker compose -f ~/docker-compose-dev.yml --env-file /home/ubuntu/.env up -d --remove-orphans
             
-            docker compose -f ~/docker-compose-dev.yml up -d --remove-orphans
-            
+            # 불필요한 Docker 이미지 정리
             docker image prune -af  # 불필요한 이미지 정리 (선택)

@@ -13,5 +13,6 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    network_mode: "host"  # EC2의 네트워크를 사용하여 연결
     volumes:
       - ./logs:/app/logs  # 개발용 로그 볼륨 마운트
