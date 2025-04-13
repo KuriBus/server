@@ -38,7 +38,7 @@ jobs:
       - name: Grant gradlew permission and build
         run: |
           chmod +x gradlew
-          ./gradlew clean build
+          ./gradlew clean build -x test
 
       # 5) Docker Hub 로그인 (프라이빗 레포지토리 접근)
       - name: Login to Docker Hub

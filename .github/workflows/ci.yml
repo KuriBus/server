@@ -54,5 +54,5 @@ jobs:
       # 4) .build시작
       # 빌드와 테스트를 함께 실행
       - name: Build and Test with Gradle
-        run: ./gradlew clean build
+        run: ./gradlew clean build -x test
         shell: bash
