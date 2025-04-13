@@ -36,8 +36,8 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
-    @ManyToOne
-    @JoinColumn(name = "room_id")
+    @ManyToOne(optional = false)  // 필수 값으로 설정
+    @JoinColumn(name = "room_id", nullable = false)  // DB와 동기화
     private Room room;
 
 }
