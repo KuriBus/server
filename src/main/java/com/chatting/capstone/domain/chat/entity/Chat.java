@@ -14,13 +14,17 @@ import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@Getter
+@Setter
 public class Chat {
 
     @Id
@@ -39,7 +43,10 @@ public class Chat {
     private String nickname;  // 유저 닉네임
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String content;  // 채팅 내용
+    private String originalContent;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String filteredContent;
 
     @CreatedDate
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
