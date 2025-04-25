@@ -1,4 +1,4 @@
-package com.chatting.capstone.global;
+/*package com.chatting.capstone.global;
 
 import com.chatting.capstone.global.moderation.ClovaService;
 import com.chatting.capstone.global.moderation.PerplexityService;
@@ -26,4 +26,4 @@ public class test {
     public String transformSentence(@RequestParam String sentence) {
         return perplexityService.transformToPositive(sentence);
     }
-}
+}*/
