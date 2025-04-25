@@ -1,14 +1,14 @@
 package com.chatting.capstone.domain.chat.controller;
 
-import com.chatting.capstone.domain.chat.ai_ver.ClovaXClient;
 import com.chatting.capstone.domain.chat.dto.request.ChatRequest;
 import com.chatting.capstone.domain.chat.dto.response.ChatResponse;
 import com.chatting.capstone.domain.chat.service.ChatService;
+import com.chatting.capstone.global.moderation.ClovaService;
+import com.chatting.capstone.global.moderation.PerplexityService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -26,11 +26,9 @@ public class ChatController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final ClovaXClient clovaXClient;
+    private final ClovaService clovaService;
+    private final PerplexityService perplexityService;
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
-
-    @Value("${clova.toxicity.threshold:0.6}") // 설정파일에서 임계값 주입 가능 (기본값 0.6)
-    private double toxicityThreshold;
 
     // 채팅 전송
     @MessageMapping("/chat.send")
@@ -40,13 +38,22 @@ public class ChatController {
 
         try {
             validateMessage(dto.getContent());
-            String originalContent = dto.getContent(); // 🔹 원본 따로 보관
 
-            clovaXClient.filterMessageAsync(originalContent, toxicityThreshold)
-                .thenAccept(filteredContent -> {
-                    ChatResponse response = chatService.save(dto, filteredContent);
-                    messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), response);
-                });
+            String originalContent = dto.getContent();
+
+            String isInAppropriate = clovaService.appraiseSentence(originalContent);
+            if (isInAppropriate.equals("1")) {
+                String filteredContent = perplexityService.transformToPositive(originalContent);
+                // 원문과 필터링된 문장 모두 저장
+                chatService.save(dto, filteredContent); // 저장할 때 필터링된 문장을 사용
+                messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), filteredContent);
+            }
+            else {
+                chatService.save(dto, originalContent);
+                messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), originalContent);
+            }
+
+
 
         } catch (IllegalArgumentException e) {
             logger.error("빈 메시지 수신: {}", e.getMessage());
