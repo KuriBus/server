@@ -1,11 +1,18 @@
 services:
   app:
-    image: ${DOCKER_USERNAME}/spring-app:latest
+    build: .
+    image: ${DOCKER_USERNAME}/server:latest  # .env 파일의 변수 사용
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=${RDS_URL}
-      - SPRING_DATASOURCE_USERNAME=${RDS_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${RDS_PASSWORD}
+      - RDS_URL=${RDS_URL}
+      - RDS_USERNAME=${RDS_USERNAME}
+      - RDS_PASSWORD=${RDS_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    network_mode: "host"  # EC2의 네트워크를 사용하여 연결
     volumes:
       - ./logs:/app/logs  # 개발용 로그 볼륨 마운트
