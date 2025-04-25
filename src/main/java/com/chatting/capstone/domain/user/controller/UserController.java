@@ -7,7 +7,6 @@ import com.chatting.capstone.global.util.IpUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,22 +22,20 @@ public class UserController {
 
     private final UserService userService;
 
+    // 로그인
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest,
             HttpSession session,
             HttpServletRequest request) {
         String nickname = loginRequest.getNickname();
         String ipAddress = IpUtil.getClientIP(request);
+        User user = userService.loginOrCreate(nickname, ipAddress);
 
-        try {
-            User user = userService.loginOrCreate(nickname, ipAddress); // IP 전달
-            session.setAttribute("user", user);
-            return ResponseEntity.ok("로그인에 성공했습니다.");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+        session.setAttribute("user", user); // 세션에 사용자 정보 저장
+        return ResponseEntity.ok("로그인에 성공했습니다.");
     }
 
+    // 로그아웃
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpSession session) {
         User user = (User) session.getAttribute("user");
@@ -52,12 +49,10 @@ public class UserController {
         }
     }
 
+    // 중복 닉네임 체크
     @GetMapping("/check-nickname")
     public ResponseEntity<String> checkNickname(@RequestParam String nickname) {
-        if (userService.isNicknameTaken(nickname)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("사용중인 닉네임입니다.");
-        } else {
-            return ResponseEntity.ok("사용 가능한 닉네임입니다.");
-        }
+        userService.isNicknameTaken(nickname);
+        return ResponseEntity.ok("사용 가능한 닉네임입니다.");
     }
 }

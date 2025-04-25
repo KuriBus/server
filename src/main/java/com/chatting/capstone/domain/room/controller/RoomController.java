@@ -4,7 +4,6 @@ import com.chatting.capstone.domain.room.dto.response.RoomResponse;
 import com.chatting.capstone.domain.room.service.RoomService;
 import com.chatting.capstone.domain.user.dto.request.UserRequest;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,13 +29,15 @@ public class RoomController {
 
     // 방 입장
     @PostMapping("/{roomId}/join")
-    public ResponseEntity<Map<String, Object>> joinRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
-        return roomService.joinRoom(roomId, request.getUserId());
+    public ResponseEntity<String> joinRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
+        roomService.joinRoomById(request.getUserId(), roomId);
+        return ResponseEntity.ok( "방에 성공적으로 입장했습니다.");
     }
 
     // 방 퇴장
     @PostMapping("/{roomId}/leave")
-    public ResponseEntity<Map<String, Object>> leaveRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
-        return roomService.leaveRoom(roomId, request.getUserId());
+    public ResponseEntity<String> leaveRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
+       roomService.leaveRoom(roomId, request.getUserId());
+        return ResponseEntity.ok("방에서 성공적으로 퇴장했습니다.");
     }
 }

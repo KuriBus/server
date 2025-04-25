@@ -3,6 +3,7 @@ package com.chatting.capstone.domain.user.entity;
 import com.chatting.capstone.domain.room.entity.Room;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -36,8 +37,8 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
-    @ManyToOne(optional = false)  // 필수 값으로 설정
-    @JoinColumn(name = "room_id", nullable = false)  // DB와 동기화
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", nullable = true )  // DB와 동기화
     private Room room;
 
 }

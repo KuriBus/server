@@ -8,10 +8,12 @@ import com.chatting.capstone.domain.user.entity.User;
 import com.chatting.capstone.domain.user.repository.UserRepository;
 import com.chatting.capstone.global.exception.GlobalExceptionHandler;
 import com.chatting.capstone.global.exception.ResponseStatus;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -39,29 +41,27 @@ public class RoomService {
     }
 
     // 방 입장
-    public ResponseEntity<Map<String, Object>> joinRoom(Long roomId, Long userId) {
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        ResponseStatus.ROOM_NOT_FOUND.getStatus(),
-                        ResponseStatus.ROOM_NOT_FOUND.name()
-                ));
+    @Transactional
+    public void joinRoomById(Long userId, Long roomId) {
 
+        // 1. 사용자 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        ResponseStatus.USER_NOT_FOUND.getStatus(),
-                        ResponseStatus.USER_NOT_FOUND.name()
-                ));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다. ID: " + userId));
 
+        // 2. 입장할 방 조회
+        Room targetRoom = roomRepository.findById(roomId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "입장하려는 방을 찾을 수 없습니다. ID: " + roomId));
+
+        // 3. 이미 해당 방에 있는지 확인
         if (user.getRoom() != null && user.getRoom().getId().equals(roomId)) {
-            throw new ResponseStatusException(
-                    ResponseStatus.ALREADY_IN_ROOM.getStatus(),
-                    ResponseStatus.ALREADY_IN_ROOM.name()
-            );
+            throw new ResponseStatusException(HttpStatus.CONFLICT, // 409 Conflict
+                    "이미 해당 방(" + targetRoom.getRoomName() + ")에 참여 중입니다.");
         }
 
-        user.setRoom(room);
-        userRepository.save(user);
-        return GlobalExceptionHandler.buildSuccessResponse(ResponseStatus.ROOM_JOIN_SUCCESS);
+        // 4. 사용자에게 방 정보 설정
+        user.setRoom(targetRoom);
+        userRepository.save(user); // 변경된 사용자 정보 저장
     }
 
     // 방 퇴장
