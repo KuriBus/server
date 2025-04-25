@@ -35,6 +35,7 @@ public class UserController {
         return ResponseEntity.ok("로그인에 성공했습니다.");
     }
 
+    // 로그아웃
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpSession session) {
         User user = (User) session.getAttribute("user");
@@ -48,6 +49,7 @@ public class UserController {
         }
     }
 
+    // 중복 닉네임 체크
     @GetMapping("/check-nickname")
     public ResponseEntity<String> checkNickname(@RequestParam String nickname) {
         userService.isNicknameTaken(nickname);
