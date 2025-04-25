@@ -61,7 +61,8 @@ public class PerplexityService {
 
         Map<String, String> userMessage = new HashMap<>();
         userMessage.put("role", "user");
-        userMessage.put("content", "이 부정적인 문장을 긍정적인 문장으로 변환해주세요. 이때 문장의 의미를 유지하면서 변환해주세요: " + sentence);
+        userMessage.put("content", "이 부정적인 문장을 긍정적인 문장으로 변환해주세요. 이때 문장의 의미를 유지하면서 변환해주세요 "
+            + "부가적인 설명은 필요하지 않으며, 필터링된 문장만 출력해 주세요. 예시로 병신이라고 하면 멍청이라고 한다던지 이런식으로" + sentence);
         messages.add(userMessage);
 
         requestBody.put("messages", messages);
@@ -70,7 +71,7 @@ public class PerplexityService {
         requestBody.put("top_p", 0.9);
 
         // Search domain filter setup
-        List<String> searchDomainFilter = new ArrayList<>();
+        /*List<String> searchDomainFilter = new ArrayList<>();
         searchDomainFilter.add("<any>");
         requestBody.put("search_domain_filter", null);
 
@@ -88,7 +89,10 @@ public class PerplexityService {
         // Web search options setup
         Map<String, String> webSearchOptions = new HashMap<>();
         webSearchOptions.put("search_context_size", "high");
-        requestBody.put("web_search_options", webSearchOptions);
+        requestBody.put("web_search_options", webSearchOptions);*/
+
+        requestBody.remove("search_domain_filter");
+        requestBody.remove("response_format");
 
         log.info("Sending request to Perplexity API: {}", requestBody);
 
