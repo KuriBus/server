@@ -1,5 +1,6 @@
 package com.chatting.capstone.domain.chat.controller;
 
+import com.chatting.capstone.domain.chat.ai_ver.ClovaXClient;
 import com.chatting.capstone.domain.chat.dto.request.ChatRequest;
 import com.chatting.capstone.domain.chat.dto.response.ChatResponse;
 import com.chatting.capstone.domain.chat.service.ChatService;
@@ -7,6 +8,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -24,7 +26,11 @@ public class ChatController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ClovaXClient clovaXClient;
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
+
+    @Value("${clova.toxicity.threshold:0.6}") // 설정파일에서 임계값 주입 가능 (기본값 0.6)
+    private double toxicityThreshold;
 
     // 채팅 전송
     @MessageMapping("/chat.send")
@@ -34,12 +40,16 @@ public class ChatController {
 
         try {
             validateMessage(dto.getContent());
+            String originalContent = dto.getContent(); // 🔹 원본 따로 보관
 
-            ChatResponse response = chatService.save(dto);
-            messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), response);
+            clovaXClient.filterMessageAsync(originalContent, toxicityThreshold)
+                .thenAccept(filteredContent -> {
+                    ChatResponse response = chatService.save(dto, filteredContent);
+                    messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), response);
+                });
 
         } catch (IllegalArgumentException e) {
-            logger.warn("빈 메시지 수신: {}", e.getMessage());
+            logger.error("빈 메시지 수신: {}", e.getMessage());
             sendErrorToUser(userId, "메시지 전송 실패: " + e.getMessage());
 
         } catch (Exception e) {
@@ -73,7 +83,7 @@ public class ChatController {
         String userId = (String) accessor.getSessionAttributes().get("userId");
 
         if (userId != null) {
-            logger.info("세션 종료: userId={} 연결 끊김", userId);
+            logger.error("세션 종료: userId={} 연결 끊김", userId);
             sendErrorToUser(userId, "연결이 끊어졌습니다. 다시 연결을 시도해주세요.");
         }
     }

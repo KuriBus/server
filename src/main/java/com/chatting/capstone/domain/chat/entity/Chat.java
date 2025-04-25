@@ -43,7 +43,10 @@ public class Chat {
     private String nickname;  // 유저 닉네임
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String content;  // 채팅 내용
+    private String originalContent;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String filteredContent;
 
     @CreatedDate
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")

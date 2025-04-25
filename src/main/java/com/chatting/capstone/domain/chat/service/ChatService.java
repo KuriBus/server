@@ -22,7 +22,7 @@ public class ChatService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
 
-    public ChatResponse save(ChatRequest dto) {
+    public ChatResponse save(ChatRequest dto, String filteredContent) {
         Room room = roomRepository.findById(dto.getRoomId())
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
         User user = userRepository.findById(dto.getUserId())
@@ -32,7 +32,8 @@ public class ChatService {
             .room(room)
             .user(user)
             .nickname(dto.getNickname())
-            .content(dto.getContent())
+            .originalContent(dto.getContent())        // 🔹 원본 저장
+            .filteredContent(filteredContent)         // 🔹 필터링된 결과 저장
             .createdAt(LocalDateTime.now())
             .build();
 
@@ -41,7 +42,7 @@ public class ChatService {
         return ChatResponse.builder()
             .id(chat.getId())
             .nickname(chat.getNickname())
-            .content(chat.getContent())
+            .content(chat.getFilteredContent())       // 🔸 클라이언트엔 필터링된 것만 보냄
             .createdAt(chat.getCreatedAt())
             .build();
     }
@@ -53,7 +54,8 @@ public class ChatService {
             .map(chat -> ChatResponse.builder()
                 .id(chat.getId())
                 .nickname(chat.getNickname())
-                .content(chat.getContent())
+                .content(chat.getOriginalContent())
+                .content(chat.getFilteredContent()) //조회는 우선 다되게
                 .createdAt(chat.getCreatedAt())
                 .build())
             .collect(Collectors.toList());
