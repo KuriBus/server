@@ -1,11 +1,12 @@
 package com.chatting.capstone.domain.chat.controller;
 
+import com.chatting.capstone.domain.chat.ai_ver.ClovaXClient;
 import com.chatting.capstone.domain.chat.dto.request.ChatRequest;
 import com.chatting.capstone.domain.chat.dto.response.ChatResponse;
 import com.chatting.capstone.domain.chat.service.ChatService;
 import com.chatting.capstone.global.moderation.ClovaService;
-import com.chatting.capstone.global.moderation.PerplexityService;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,7 @@ public class ChatController {
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
     private final ClovaService clovaService;
-    private final PerplexityService perplexityService;
+    private final ClovaXClient clovaXClient;
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
     // 채팅 전송
@@ -38,22 +39,40 @@ public class ChatController {
 
         try {
             validateMessage(dto.getContent());
-
             String originalContent = dto.getContent();
-
+            
+            //평균적인 답장 속도를 위해 시간기정
+            long startTime = System.currentTimeMillis();
+            
             String isInAppropriate = clovaService.appraiseSentence(originalContent);
-            if (isInAppropriate.equals("1")) {
-                String filteredContent = perplexityService.transformToPositive(originalContent);
-                // 원문과 필터링된 문장 모두 저장
-                chatService.save(dto, filteredContent); // 저장할 때 필터링된 문장을 사용
+            if ("1".equals(isInAppropriate)) {
+                // 클로바 X를 비동기적으로 호출하고 결과를 기다림
+                CompletableFuture<String> filteredMessageFuture = clovaXClient.filterMessageAsync(originalContent);
+                String filteredContent = filteredMessageFuture.get(); // 동기적으로 기다려서 결과 얻기
+
+                // 원본과 필터링된 메시지 모두 저장
+                chatService.save(dto, filteredContent); // 저장할 때 필터링된 문장 사용
+
+                long endTime = System.currentTimeMillis();
+
+                long elapsedTime = endTime - startTime;
+                long minDelay = 100; // 최대시간 지정
+
+                if (elapsedTime < minDelay) {
+                    Thread.sleep(minDelay - elapsedTime); // 남은 시간만큼 대기
+                }
                 messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), filteredContent);
-            }
-            else {
+            } else {
+                long endTime = System.currentTimeMillis();
+
+                long elapsedTime = endTime - startTime;
+                long minDelay = 100; // 최대시간 지정
+                if (elapsedTime < minDelay) {
+                    Thread.sleep(minDelay - elapsedTime); // 남은 시간만큼 대기
+                }
                 chatService.save(dto, originalContent);
                 messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), originalContent);
             }
-
-
 
         } catch (IllegalArgumentException e) {
             logger.error("빈 메시지 수신: {}", e.getMessage());

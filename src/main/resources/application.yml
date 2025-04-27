@@ -25,6 +25,7 @@ api:
     base-url: ${CLOVA_URL}
     task-id: ${CLOVA_TASK_ID}
     key: ${CLOVA_KEY}
+    ai_key: ${CLOVA_PLAYGROUND_KEY}
   perplexity:
     url: https://api.perplexity.ai
     key: ${PERPLEXITY_KEY}
