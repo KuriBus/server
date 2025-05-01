@@ -17,6 +17,11 @@ spring:
     hibernate:
       ddl-auto: create
     generate-ddl: false
+  data:
+    redis:
+      host: localhost #Local: localhost, Docker: redis
+      port: 6379 # Docker에서 Redis 컨테이너가 6379 포트를 사용하므로, 호스트에서도 동일한 포트를 사용
+      password:
   sql:
     init:
       mode: never
