@@ -28,7 +28,7 @@ public class UserLocationService {
         hashOps.put(key, FIELD_ROOM_NAME, roomName);
         hashOps.put(key, FIELD_X, String.valueOf(x));
         hashOps.put(key, FIELD_Y, String.valueOf(y));
-         redisTemplate.expire(key, 1, TimeUnit.HOURS); // 1시간 후 자동 삭제
+        redisTemplate.expire(key, 1, TimeUnit.HOURS); // 1시간 후 자동 삭제
     }
 
     // 특정 사용자의 전체 위치 정보(Map)를 Redis에서 가져옴
