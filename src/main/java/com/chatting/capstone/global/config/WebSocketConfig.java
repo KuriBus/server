@@ -30,7 +30,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws/chat")
+        registry.addEndpoint("/ws/app")
             .setHandshakeHandler(new CustomHandshakeHandler())
             .setAllowedOriginPatterns("*") // CORS 허용
             .withSockJS(); // SockJS fallback 지원
