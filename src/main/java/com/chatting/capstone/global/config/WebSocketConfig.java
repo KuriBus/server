@@ -22,7 +22,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         config.enableSimpleBroker("/topic", "/queue");
 
         // 메시지 송신용 prefix (컨트롤러 @MessageMapping 경로)
-        config.setApplicationDestinationPrefixes("/chat");
+        config.setApplicationDestinationPrefixes("/chat", "/app");
 
         // convertAndSendToUser 를 사용할 때 필요
         config.setUserDestinationPrefix("/user");
