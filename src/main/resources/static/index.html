@@ -2,10 +2,10 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>WebSocket 캐릭터 이동 테스트</title>
+  <title>WebSocket 캐릭터 이동 및 채팅 테스트</title>
   <style>
     html, body { height: 100%; margin: 0; padding: 0; }
-    body { background: #222; }
+    body { background: #222; font-family: sans-serif; }
     #game {
       width: 1600px;
       height: 900px;
@@ -58,34 +58,67 @@
       color: #01579b;
       font-weight: bold;
     }
+    #chatbox {
+      position: absolute;
+      left: 20px;
+      bottom: 20px;
+      width: 400px;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      box-shadow: 0 0 8px #999;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      z-index: 20;
+    }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      font-size: 14px;
+      max-height: 150px;  /* 최대 높이 설정 (필요한 경우 조정) */
+    }
+
+    #chatInput {
+      width: 100%;
+      height: 30px;
+      font-size: 14px;
+      padding: 5px;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
 <div id="userForm">
   <label for="userIdInput">유저 아이디: </label>
   <input type="text" id="userIdInput" placeholder="user1234">
+  <label for="nicknameInput">닉네임: </label>
+  <input type="text" id="nicknameInput" placeholder="사용자 이름">
   <button id="startBtn">시작</button>
 </div>
-<div id="game"></div>
+<div id="game">
+  <div id="chatbox" style="display:none;">
+    <div id="messages"></div>
+    <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." />
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script>
   let userId = null;
+  let nickname = null;
   let stompClient = null;
   const game = document.getElementById('game');
+  const chatbox = document.getElementById('chatbox');
+  const messages = document.getElementById('messages');
+  const chatInput = document.getElementById('chatInput');
 
-  // 그리드 크기 (40x22 셀, 40px 단위)
-  const GRID_W = 40;  // 셀 너비(px)
-  const GRID_H = 40;  // 셀 높이(px)
-  const MAX_X = 39;   // 0~39 (1600/40=40)
-  const MAX_Y = 21;   // 0~21 (900/40=22)
-  const CENTER_X = Math.floor(MAX_X / 2); // 20
-  const CENTER_Y = Math.floor(MAX_Y / 2); // 11
-
-  // 모든 공간(룸/브릿지) 이름
+  const GRID_W = 40, GRID_H = 40, MAX_X = 39, MAX_Y = 21;
+  const CENTER_X = Math.floor(MAX_X / 2);
+  const CENTER_Y = Math.floor(MAX_Y / 2);
   const allZones = ["Room 1","Bridge 1","Room 2","Bridge 2","Room 3","Bridge 3"];
-
-  // 포탈 위치 정의 (x, y는 0~MAX_X, 0~MAX_Y 기준, y=MAX_Y/2가 중간)
   const portalPositions = {};
   allZones.forEach(zone => {
     portalPositions[zone] = [
@@ -93,49 +126,50 @@
       { x: MAX_X-2, y: CENTER_Y, direction: "right" }
     ];
   });
+  const zoneIdMap = {
+    "Room 1": 1,
+    "Bridge 1": 2,
+    "Room 2": 3,
+    "Bridge 2": 4,
+    "Room 3": 5,
+    "Bridge 3": 6
+  };
 
   document.getElementById('startBtn').onclick = function() {
     userId = document.getElementById('userIdInput').value.trim();
-    if (!userId) {
-      alert('유저 아이디를 입력하세요!');
-      return;
-    }
+    nickname = document.getElementById('nicknameInput').value.trim();
+    if (!userId || !nickname) return alert('유저 아이디와 닉네임을 입력하세요!');
     document.getElementById('userForm').style.display = 'none';
+    chatbox.style.display = 'flex';
 
-    // WebSocket 연결
-    const socket = new SockJS('http://localhost:8080/ws/app');
+    const socket = new SockJS('http://localhost:8080/ws/app?userId=' + userId + '&nickname=' + encodeURIComponent(nickname));
     stompClient = Stomp.over(socket);
 
-    let myZone = "Room 1"; // 기본값
+    let myZone = "Room 1"; // 기본적으로 'Room 1'에 설정
     let myPos = { x: CENTER_X, y: CENTER_Y };
 
-    stompClient.connect({}, function (frame) {
-      // 1. 입장하자마자 중앙값 위치로 move 메시지 전송
+    stompClient.connect({}, function () {
       stompClient.send("/app/move", {}, JSON.stringify({
         userId: userId,
         direction: "init"
       }));
 
-      // 2. 구독 및 화면 그리기
       stompClient.subscribe('/topic/positions', function (message) {
         const allPositions = JSON.parse(message.body);
-        // 내 방 정보, 내 좌표 업데이트
         const me = allPositions.find(pos => pos.userId === userId);
         if (me && me.roomName !== undefined) {
-          myZone = me.roomName;
+          myZone = me.roomName; // 현재 위치한 방으로 업데이트
           myPos = { x: me.x, y: me.y };
         }
 
-        // 화면 클리어
         game.innerHTML = '';
+        game.appendChild(chatbox);
 
-        // zone(내가 있는 곳) 하나만 그림
         let zoneDiv = document.createElement('div');
         zoneDiv.className = 'zone ' + (myZone.startsWith('Room') ? 'room' : 'bridge');
         zoneDiv.innerHTML = `<span class="zone-label">${myZone}</span>`;
         game.appendChild(zoneDiv);
 
-        // 포탈 그리기 (현재 zone에만)
         if (portalPositions[myZone]) {
           portalPositions[myZone].forEach(portal => {
             let portalDiv = document.createElement('div');
@@ -148,10 +182,7 @@
           });
         }
 
-        // 같은 zone 캐릭터만 그리기
-        allPositions
-        .filter(pos => pos.roomName === myZone)
-        .forEach(pos => {
+        allPositions.filter(pos => pos.roomName === myZone).forEach(pos => {
           let char = document.createElement('div');
           char.className = 'character';
           char.style.left = (Math.max(0, Math.min(1600 - 40, pos.x * GRID_W))) + 'px';
@@ -160,19 +191,35 @@
           zoneDiv.appendChild(char);
         });
       });
+
+      // 채팅 수신
+      stompClient.subscribe(`/topic/room/${zoneIdMap[myZone]}`, function (msg) {
+        const text = msg.body;
+        const div = document.createElement('div');
+        div.textContent = `${nickname}: ${text}`;
+
+
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+      });
     });
 
-    // 키 입력 처리
     document.addEventListener('keydown', function(e) {
       if (!stompClient || !userId) return;
-
-      // 이동
-      if (['w','a','s','d'].includes(e.key)) {
+      if (e.key === 'Enter' && document.activeElement === chatInput) {
+        const msg = chatInput.value.trim();
+        if (msg !== '') {
+          stompClient.send("/app/chat.send", {}, JSON.stringify({
+            userId: userId,
+            nickname: nickname,
+            content: msg,
+            roomId: zoneIdMap[myZone]
+          }));
+          chatInput.value = '';
+        }
+      } else if (['w','a','s','d'].includes(e.key)) {
         stompClient.send("/app/move", {}, JSON.stringify({userId: userId, direction: e.key}));
-      }
-
-      // 포탈(E) 키 처리: 내 위치가 포탈 위치와 일치할 때만 동작
-      if (e.key === 'e') {
+      } else if (e.key === 'e') {
         const portals = portalPositions[myZone] || [];
         const match = portals.find(p => p.x === myPos.x && p.y === myPos.y);
         if (match) {
