@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>캐릭터 커스터마이징 테스트</title>
+</head>
+<body>
+<h2>커스터마이징 선택</h2>
+
+<label for="nickname">닉네임:</label>
+<input type="text" id="nickname" placeholder="닉네임을 입력하세요" />
+
+<br><br>
+
+<label for="hair">머리 스타일:</label>
+<select id="hair">
+  <option value="0">기본</option>
+  <option value="1">짧은 머리</option>
+  <option value="2">긴 머리</option>
+  <option value="3">파마</option>
+  <option value="4">포니테일</option>
+  <option value="5">스포츠컷</option>
+</select>
+
+<br><br>
+
+<label for="outfit">옷 스타일:</label>
+<select id="outfit">
+  <option value="0">기본 옷</option>
+  <option value="1">청바지</option>
+  <option value="2">슈트</option>
+  <option value="3">운동복</option>
+  <option value="4">드레스</option>
+  <option value="5">후드티</option>
+</select>
+
+<br><br>
+<button onclick="submitCustomization()">저장</button>
+
+<h3>브로드캐스트 수신 로그</h3>
+<pre id="broadcastLog" style="background:#f4f4f4; padding:10px;"></pre>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<script>
+  // === WebSocket 연결 및 구독 ===
+  const socket = new SockJS('http://localhost:8080/ws/app'); // 서버 주소에 맞게 수정
+  const stompClient = Stomp.over(socket);
+
+  stompClient.connect({}, function () {
+    console.log("WebSocket 연결됨");
+    stompClient.subscribe('/topic/customization', function (message) {
+      const data = JSON.parse(message.body);
+      const log = `📣 브로드캐스트 수신됨!
+유저 ID: ${data.userId}
+머리 타입: ${data.hairType}
+옷 타입: ${data.outfitType}
+==============================`;
+      document.getElementById("broadcastLog").innerText += log + '\n';
+    });
+  });
+
+  // === REST API 호출 ===
+  function submitCustomization() {
+    const nickname = document.getElementById("nickname").value;
+    const hairType = document.getElementById("hair").value;
+    const outfitType = document.getElementById("outfit").value;
+
+    if (!nickname) {
+      alert("닉네임을 입력하세요.");
+      return;
+    }
+
+    fetch("http://localhost:8080/api/customization/update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        nickname: nickname,
+        hairType: parseInt(hairType),
+        outfitType: parseInt(outfitType)
+      })
+    })
+    .then(response => {
+      if (response.ok) {
+        alert("저장 요청 성공 (브로드캐스트는 로그로 확인)");
+      } else {
+        alert("저장 요청 실패");
+      }
+    });
+  }
+</script>
+</body>
+</html>
