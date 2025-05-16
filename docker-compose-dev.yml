@@ -1,18 +1,42 @@
 services:
+  redis:
+    image: redis:latest
+    container_name: ${REDIS_CONTAINER_NAME}
+    restart: always
+    ports:
+      - "6379:6379"  # Redis의 기본 포트
+    command: redis-server --requirepass ${REDIS_PASSWORD} # Redis 비밀번호 설정
+    networks:
+      - redis-net
+    volumes:
+      - redis_data:/data
   app:
     build: .
     image: ${DOCKER_USERNAME}/server:latest  # .env 파일의 변수 사용
     ports:
       - "8080:8080"
     environment:
-      - RDS_URL=${RDS_URL}
-      - RDS_USERNAME=${RDS_USERNAME}
-      - RDS_PASSWORD=${RDS_PASSWORD}
+      # --- RDS 관련 ---
+      RDS_URL: ${RDS_URL}
+      RDS_USERNAME: ${RDS_USERNAME}
+      RDS_PASSWORD: ${RDS_PASSWORD}
+      # --- Redis 관련 ---
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_CONTAINER_NAME: ${REDIS_CONTAINER_NAME}
+
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 30s
       timeout: 5s
       retries: 3
-    network_mode: "host"  # EC2의 네트워크를 사용하여 연결
+    networks:
+      - redis-net
     volumes:
-      - ./logs:/app/logs  # 개발용 로그 볼륨 마운트
+      - ./logs:/app/logs
+
+volumes:
+  redis_data:
+
+networks:
+  redis-net:
+    driver: bridge
