@@ -41,7 +41,7 @@ public class User {
     private boolean active = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id", nullable = true )  // DB와 동기화
+    @JoinColumn(name = "room_id", nullable = true )
     private Room room;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
