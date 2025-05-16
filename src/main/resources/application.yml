@@ -13,7 +13,7 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
         jdbc:
-          time_zone: Asia/Seoul         # DB 시간대 강제 지정
+          time_zone: Asia/Seoul
     hibernate:
       ddl-auto: update
     generate-ddl: false
