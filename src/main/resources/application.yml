@@ -15,7 +15,7 @@ spring:
         jdbc:
           time_zone: Asia/Seoul
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     generate-ddl: false
   data:
     redis:
