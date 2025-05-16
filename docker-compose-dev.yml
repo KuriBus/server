@@ -21,9 +21,9 @@ services:
       - RDS_USERNAME=${RDS_USERNAME}
       - RDS_PASSWORD=${RDS_PASSWORD}
         
-        # --- Redis 관련 ---
-        - REDIS_PASSWORD=${REDIS_PASSWORD}
-        - REDIS_CONTAINER_NAME=${REDIS_CONTAINER_NAME}
+      # --- Redis 관련 ---
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_CONTAINER_NAME=${REDIS_CONTAINER_NAME}
 
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
