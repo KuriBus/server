@@ -16,7 +16,6 @@ spring:
           time_zone: Asia/Seoul
     hibernate:
       ddl-auto: update
-    generate-ddl: false
   data:
     redis:
       host: redis #Local: localhost, Docker: redis
