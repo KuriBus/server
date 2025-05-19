@@ -10,10 +10,12 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig {
+public class SecurityConfig implements WebMvcConfigurer {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -50,5 +52,20 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // 모든 경로에 적용
         return source;
+    }
+
+    // WebMvcConfigurer를 통한 CORS 추가 (sockJs는 따로 필요해서 추가로 넣는 작업)
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+            .allowedOrigins(
+                "http://localhost:8080",
+                "http://localhost:63342",
+                "http://localhost:5173",
+                "https://kuriverse.com"
+            )
+            .allowedMethods("*")
+            .allowedHeaders("*")
+            .allowCredentials(true);
     }
 }
