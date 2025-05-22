@@ -35,7 +35,6 @@ public class Room {
     private int height = 900; // 방 세로 크기 (900)
 
     @OneToMany(mappedBy = "room", // Portal 엔티티의 'room' 필드에 의해 매핑됨
-            fetch = FetchType.LAZY,
             cascade = CascadeType.ALL, // Room 저장/삭제 시 Portal도 함께 처리
             orphanRemoval = true)      // Room의 portals 리스트에서 제거되면 DB에서도 삭제
     @Builder.Default

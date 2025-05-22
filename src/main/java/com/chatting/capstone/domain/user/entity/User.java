@@ -5,7 +5,6 @@ import com.chatting.capstone.domain.room.entity.Room;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,7 +39,7 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "room_id", nullable = true )
     private Room room;
 
