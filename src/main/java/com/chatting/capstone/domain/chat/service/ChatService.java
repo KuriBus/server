@@ -25,15 +25,16 @@ public class ChatService {
     public ChatResponse save(ChatRequest dto, String filteredContent) {
         Room room = roomRepository.findById(dto.getRoomId())
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
-        User user = userRepository.findById(dto.getUserId())
+
+        User user = userRepository.findByNickname(dto.getNickname())
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
 
         Chat chat = Chat.builder()
             .room(room)
             .user(user)
             .nickname(dto.getNickname())
-            .originalContent(dto.getContent())        // 🔹 원본 저장
-            .filteredContent(filteredContent)         // 🔹 필터링된 결과 저장
+            .originalContent(dto.getContent())
+            .filteredContent(filteredContent)
             .createdAt(LocalDateTime.now())
             .build();
 
@@ -41,8 +42,9 @@ public class ChatService {
 
         return ChatResponse.builder()
             .id(chat.getId())
+            .userId(chat.getUser().getId())
             .nickname(chat.getNickname())
-            .content(chat.getFilteredContent())       // 🔸 클라이언트엔 필터링된 것만 보냄
+            .content(chat.getFilteredContent())
             .createdAt(chat.getCreatedAt())
             .build();
     }
@@ -53,9 +55,9 @@ public class ChatService {
         return chatRepository.findAllByRoomOrderByCreatedAtAsc(room).stream()
             .map(chat -> ChatResponse.builder()
                 .id(chat.getId())
+                .userId(chat.getUser().getId())  //userid도 같이 반환되게
                 .nickname(chat.getNickname())
-                .content(chat.getOriginalContent())
-                .content(chat.getFilteredContent()) //조회는 우선 다되게
+                .content(chat.getFilteredContent()) //필터링된 문장만 출력
                 .createdAt(chat.getCreatedAt())
                 .build())
             .collect(Collectors.toList());
