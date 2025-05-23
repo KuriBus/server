@@ -15,7 +15,7 @@ spring:
         jdbc:
           time_zone: Asia/Seoul
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
   data:
     redis:
       host: redis #Local: localhost, Docker: redis
