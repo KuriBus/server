@@ -41,6 +41,7 @@ public class Room {
     private List<Portal> portals = new ArrayList<>();
 
     @OneToMany(mappedBy = "room")
+    @Builder.Default
     private List<User> users = new ArrayList<>();
 
     // --- 중요: 연관관계 편의 메소드 (양방향 설정) ---
