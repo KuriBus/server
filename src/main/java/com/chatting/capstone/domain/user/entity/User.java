@@ -2,6 +2,7 @@ package com.chatting.capstone.domain.user.entity;
 
 import com.chatting.capstone.domain.customization.entity.Customization;
 import com.chatting.capstone.domain.room.entity.Room;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,6 +42,7 @@ public class User {
 
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = true )
+    @JsonIgnore
     private Room room;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
