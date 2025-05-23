@@ -9,6 +9,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
+@Table(name = "customization")
 public class Customization {
 
     @Id

@@ -13,6 +13,7 @@ import lombok.Setter;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "portal")
 public class Portal {
 
     @Id

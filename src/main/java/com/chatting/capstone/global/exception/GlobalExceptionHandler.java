@@ -1,3 +1,4 @@
+/*
 package com.chatting.capstone.global.exception;
 
 import java.util.HashMap;
@@ -35,3 +36,5 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(500).body(response);
     }
 }
+*/
+//전체 주석처리
