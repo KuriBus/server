@@ -10,7 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ChatRequest {
     private Long roomId;
-    private Long userId;
     private String nickname;
     private String content;
 }

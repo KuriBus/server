@@ -12,6 +12,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ChatResponse {
     private Long id;
+    private Long userId;
     private String nickname;
     private String content;
     private LocalDateTime createdAt;
