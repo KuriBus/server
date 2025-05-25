@@ -46,6 +46,9 @@ public class ChatController {
             ChatResponse chatResponse;
 
             if ("1".equals(isInAppropriate)) {
+                messagingTemplate.convertAndSend("/queue/warnings" + nickname,
+                    "⚠️ 부적절한 표현이 감지되어 자동으로 수정되었습니다.");
+
                 CompletableFuture<String> filteredMessageFuture = clovaXClient.filterMessageAsync(originalContent);
                 String filteredContent = filteredMessageFuture.get();
                 chatResponse = chatService.save(dto, filteredContent);
@@ -72,7 +75,7 @@ public class ChatController {
 
     //사용자에게 에러 메세지 전송
     private void sendErrorToUser(String nickname, String errorMessage) {
-        messagingTemplate.convertAndSendToUser(nickname, "/queue/errors", errorMessage);
+        messagingTemplate.convertAndSend("/queue/errors" + nickname, errorMessage);
     }
 
     // 메시지 유효성 검사
