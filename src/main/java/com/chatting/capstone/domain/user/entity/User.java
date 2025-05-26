@@ -2,10 +2,10 @@ package com.chatting.capstone.domain.user.entity;
 
 import com.chatting.capstone.domain.customization.entity.Customization;
 import com.chatting.capstone.domain.room.entity.Room;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,8 +42,9 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "room_id", nullable = true )
+    @JsonIgnore
     private Room room;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

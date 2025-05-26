@@ -1,6 +1,5 @@
 package com.chatting.capstone.domain.chat.service;
 
-
 import com.chatting.capstone.domain.chat.dto.request.ChatRequest;
 import com.chatting.capstone.domain.chat.dto.response.ChatResponse;
 import com.chatting.capstone.domain.chat.entity.Chat;

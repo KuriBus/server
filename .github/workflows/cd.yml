@@ -1,7 +1,7 @@
 name: Java CD
 
 on:
-  pull_request:
+  push:
     branches: [ develop ]
     # 다음 파일들이 변경되었을 때는 워크플로우를 실행하지 않음
     paths-ignore:
@@ -55,15 +55,24 @@ jobs:
           docker compose -f docker-compose-dev.yml build
           docker compose -f docker-compose-dev.yml push
 
-      # 7) docker-compose-dev.yml 파일 EC2로 복사
-      - name: Copy compose files to EC2
+      # 7) GitHub Secrets에서 .env 파일 생성 및 EC2로 복사
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          chmod 600 .env
+
+      - name: Verify files before SCP
+        run: |
+          ls -al
+          cat .env
+
+      - name: Copy .env and compose files to EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: |
-            docker-compose-dev.yml
+          source: ".env,docker-compose-dev.yml"
           target: "~"
 
       # 8) EC2에서 Docker Compose 실행 및 배포
@@ -75,12 +84,22 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
             echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-            
-            # EC2에서 기존 컨테이너를 중지하고 삭제 (선택)
-            docker compose -f ~/docker-compose-dev.yml down || true
 
-            # EC2에서 Docker Compose를 실행하면서 .env 파일을 사용하도록 --env-file 옵션 추가
-            docker compose -f ~/docker-compose-dev.yml --env-file /home/ubuntu/.env up -d --remove-orphans
-            
+            # 기존 컨테이너 중지 및 삭제
+            if [ -f ~/docker-compose-dev.yml ]; then
+              docker compose -f ~/docker-compose-dev.yml down || true
+            else
+              echo "docker-compose-dev.yml 파일이 없습니다."
+              exit 1
+            fi
+
+            # Docker Compose 실행
+            if [ -f ~/.env ]; then
+              docker compose -f ~/docker-compose-dev.yml --env-file ~/.env up -d --remove-orphans
+            else
+              echo ".env 파일이 없습니다."
+              exit 1
+            fi
+
             # 불필요한 Docker 이미지 정리
-            docker image prune -af  # 불필요한 이미지 정리 (선택)
+            docker image prune -af

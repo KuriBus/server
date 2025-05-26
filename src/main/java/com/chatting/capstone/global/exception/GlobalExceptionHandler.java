@@ -15,32 +15,25 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    // ResponseStatusException 처리
     @ExceptionHandler(ResponseStatusException.class)
     @ResponseBody
     public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException ex) {
-        ResponseStatus status = ResponseStatus.valueOf(ex.getReason());
-        return buildErrorResponse(status);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", ex.getStatusCode().value());
+        response.put("message", ex.getReason());
+        return ResponseEntity.status(ex.getStatusCode()).body(response);
     }
 
+    // 그 외 모든 예외 처리
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public ResponseEntity<Map<String, Object>> handleException(Exception ex) {
         log.warn(ex.getMessage(), ex);
-        return buildErrorResponse(ResponseStatus.SERVER_ERROR);
-    }
-
-    private ResponseEntity<Map<String, Object>> buildErrorResponse(ResponseStatus status) {
         Map<String, Object> response = new HashMap<>();
-        response.put("status", status.getStatus().value()); // 상태 코드
-        response.put("message", status.getMessage()); // 메시지
-        return ResponseEntity.status(status.getStatus()).body(response);
-    }
-
-    public static ResponseEntity<Map<String, Object>> buildSuccessResponse(ResponseStatus status) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", status.getStatus().value()); // 상태 코드
-        response.put("message", status.getMessage()); // 메시지
-        return ResponseEntity.status(status.getStatus()).body(response);
+        response.put("status", 500);
+        response.put("message", "서버 오류가 발생했습니다.");
+        return ResponseEntity.status(500).body(response);
     }
 }
 */
