@@ -56,8 +56,16 @@ jobs:
           docker compose -f docker-compose-dev.yml push
 
       # 7) GitHub Secrets에서 .env 파일 생성 및 EC2로 복사
-      - name: Create and copy .env file to EC2
-        run: echo "${{ secrets.ENV_FILE }}" > .env
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          chmod 600 .env
+
+      - name: Verify files before SCP
+        run: |
+          ls -al
+          cat .env
+
       - name: Copy .env and compose files to EC2
         uses: appleboy/scp-action@master
         with:
