@@ -3,7 +3,7 @@ name: Java CI
 # Test
 # 워크플로우 트리거 조건 설정
 on:
-  pull_request:
+  push:
     # develop 브랜치에 대한 PR일 때만 실행
     branches: [ develop ]
     # 다음 파일들이 변경되었을 때는 워크플로우를 실행하지 않음
