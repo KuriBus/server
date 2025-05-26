@@ -72,9 +72,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: |
-            .env
-            docker-compose-dev.yml
+          source: ".env,docker-compose-dev.yml"
           target: "~"
 
       # 8) EC2에서 Docker Compose 실행 및 배포
