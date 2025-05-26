@@ -59,7 +59,7 @@ jobs:
       - name: Create .env file
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
-          chmod 600 .env
+          chmod 644 .env
 
       - name: Verify files before SCP
         run: |
