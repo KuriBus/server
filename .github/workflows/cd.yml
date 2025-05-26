@@ -1,7 +1,7 @@
 name: Java CD
 
 on:
-  push:
+  pull_request:
     branches: [ develop ]
     # 다음 파일들이 변경되었을 때는 워크플로우를 실행하지 않음
     paths-ignore:
@@ -52,8 +52,14 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         run: |
+          echo "--- Debug: Current working directory and files before build ---"
+          pwd
+          ls -al
+          echo "--- Starting Docker Compose build ---"
           docker compose -f docker-compose-dev.yml build
+          echo "--- Docker Compose build finished. Starting push ---"
           docker compose -f docker-compose-dev.yml push
+          echo "--- Docker Compose push finished ---"
 
       # 7) GitHub Secrets에서 .env 파일 생성 및 EC2로 복사
       - name: Create .env file
