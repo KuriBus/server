@@ -11,9 +11,7 @@ services:
     volumes:
       - redis_data:/data
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     image: ${DOCKER_USERNAME}/server:latest  # .env 파일의 변수 사용
     ports:
       - "8080:8080"
