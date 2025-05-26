@@ -34,54 +34,48 @@ public class ChatController {
     // 채팅 전송
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatRequest dto, StompHeaderAccessor accessor) {
-        String userId = String.valueOf(dto.getUserId());
-        accessor.getSessionAttributes().put("userId", userId);
+        String nickname = dto.getNickname();
+        accessor.getSessionAttributes().put("nickname", nickname); // userId 대신 nickname
 
         try {
             validateMessage(dto.getContent());
             String originalContent = dto.getContent();
-            
-            //평균적인 답장 속도를 위해 시간기정
             long startTime = System.currentTimeMillis();
-            
+
             String isInAppropriate = clovaService.appraiseSentence(originalContent);
+            ChatResponse chatResponse;
+
             if ("1".equals(isInAppropriate)) {
-                // 클로바 X를 비동기적으로 호출하고 결과를 기다림
+                messagingTemplate.convertAndSend("/queue/warnings" + nickname,
+                    "⚠️ 부적절한 표현이 감지되어 자동으로 수정되었습니다.");
+
                 CompletableFuture<String> filteredMessageFuture = clovaXClient.filterMessageAsync(originalContent);
-                String filteredContent = filteredMessageFuture.get(); // 동기적으로 기다려서 결과 얻기
-
-                // 원본과 필터링된 메시지 모두 저장
-                chatService.save(dto, filteredContent); // 저장할 때 필터링된 문장 사용
-
-                long endTime = System.currentTimeMillis();
-
-                long elapsedTime = endTime - startTime;
-                long minDelay = 100; // 최대시간 지정
-
-                if (elapsedTime < minDelay) {
-                    Thread.sleep(minDelay - elapsedTime); // 남은 시간만큼 대기
-                }
-                messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), filteredContent);
+                String filteredContent = filteredMessageFuture.get();
+                chatResponse = chatService.save(dto, filteredContent);
             } else {
-                long endTime = System.currentTimeMillis();
-
-                long elapsedTime = endTime - startTime;
-                long minDelay = 100; // 최대시간 지정
-                if (elapsedTime < minDelay) {
-                    Thread.sleep(minDelay - elapsedTime); // 남은 시간만큼 대기
-                }
-                chatService.save(dto, originalContent);
-                messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), originalContent);
+                chatResponse = chatService.save(dto, originalContent);
             }
+
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            long minDelay = 100;
+            if (elapsedTime < minDelay) {
+                Thread.sleep(minDelay - elapsedTime);
+            }
+
+            messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), chatResponse);
 
         } catch (IllegalArgumentException e) {
             logger.error("빈 메시지 수신: {}", e.getMessage());
-            sendErrorToUser(userId, "메시지 전송 실패: " + e.getMessage());
-
+            sendErrorToUser(nickname, "메시지 전송 실패: " + e.getMessage());
         } catch (Exception e) {
             logger.error("채팅 전송 중 예외 발생: {}", e.getMessage());
-            sendErrorToUser(userId, "채팅 전송 중 오류가 발생했습니다.");
+            sendErrorToUser(nickname, "채팅 전송 중 오류가 발생했습니다.");
         }
+    }
+
+    //사용자에게 에러 메세지 전송
+    private void sendErrorToUser(String nickname, String errorMessage) {
+        messagingTemplate.convertAndSend("/queue/errors" + nickname, errorMessage);
     }
 
     // 메시지 유효성 검사
@@ -89,11 +83,6 @@ public class ChatController {
         if (content == null || content.trim().isEmpty()) {
             throw new IllegalArgumentException("빈 메시지는 보낼 수 없습니다.");
         }
-    }
-
-    // 사용자에게 에러 메시지 전송
-    private void sendErrorToUser(String userId, String errorMessage) {
-        messagingTemplate.convertAndSendToUser(userId, "/queue/errors", errorMessage);
     }
 
     // 채팅 기록 조회
