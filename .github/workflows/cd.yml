@@ -1,7 +1,7 @@
 name: Java CD
 
 on:
-  push:
+  pull_request:
     branches: [ develop ]
     # 다음 파일들이 변경되었을 때는 워크플로우를 실행하지 않음
     paths-ignore:
