@@ -8,14 +8,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     show-sql: true
+    hibernate:
+      ddl-auto: create
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
-        jdbc:
-          time_zone: Asia/Seoul
-    hibernate:
-      ddl-auto: create
   data:
     redis:
       host: redis #Local: localhost, Docker: redis
