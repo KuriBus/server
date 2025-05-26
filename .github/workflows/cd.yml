@@ -55,6 +55,9 @@ jobs:
           echo "--- Debug: Current working directory and files before build ---"
           pwd
           ls -al
+          echo "--- [TEST STEP] Testing direct Docker build (without Compose) ---"
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/test-direct-build:latest -f Dockerfile .
+          echo "--- [TEST STEP] Direct Docker build test finished. Check logs above. ---"
           echo "--- Starting Docker Compose build ---"
           docker compose -f docker-compose-dev.yml build
           echo "--- Docker Compose build finished. Starting push ---"
