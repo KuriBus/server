@@ -37,3 +37,9 @@ dependencies {
 tasks.named('test') {
     enabled = false
 }
+
+tasks.withType(Jar) {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
