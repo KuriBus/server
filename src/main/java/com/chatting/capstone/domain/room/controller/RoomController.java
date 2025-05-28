@@ -27,17 +27,18 @@ public class RoomController {
         return ResponseEntity.ok(rooms);
     }
 
+    //입장 퇴장 모두 닉네임 기반으로
     // 방 입장
     @PostMapping("/{roomId}/join")
     public ResponseEntity<String> joinRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
-        roomService.joinRoomById(request.getUserId(), roomId);
+        roomService.joinRoomByNickname(request.getNickname(), roomId);
         return ResponseEntity.ok( "방에 성공적으로 입장했습니다.");
     }
 
     // 방 퇴장
     @PostMapping("/{roomId}/leave")
     public ResponseEntity<String> leaveRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
-       roomService.leaveRoom(roomId, request.getUserId());
+        roomService.leaveRoom(roomId, request.getNickname());
         return ResponseEntity.ok("방에서 성공적으로 퇴장했습니다.");
     }
 }

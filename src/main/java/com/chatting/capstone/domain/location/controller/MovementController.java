@@ -30,30 +30,26 @@ public class MovementController {
     private final RoomRepository roomRepository;
 
     private static final List<String> PATH = Arrays.asList(
-            "Room 1", "Bridge 1", "Room 2", "Bridge 2", "Room 3", "Bridge 3"
+        "Room 1", "Bridge 1", "Room 2", "Bridge 2", "Room 3", "Bridge 3"
     );
 
     @MessageMapping("/move")
     @SendTo("/topic/positions")
     @Transactional(readOnly = true)
     public Collection<PositionResponse> move(MoveRequest message) {
-        Long userId;
-        try {
-            userId = Long.parseLong(message.getUserId());
-        } catch (NumberFormatException e) {
+        String nickname = message.getNickname();
+        if (nickname == null || nickname.isBlank()) {
             return Collections.emptyList();
         }
-
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userRepository.findByNickname(nickname).orElse(null);
         if (user == null) {
             return Collections.emptyList();
         }
-
         // User의 실제 방 정보
         String currentActualRoomName = (user.getRoom() != null) ? user.getRoom().getRoomName() : null;
 
         // Redis에서 위치 정보 조회
-        String redisKey = "user:display_location:" + userId;
+        String redisKey = "user:display_location:" + user.getId();
         Map<Object, Object> redisValue = redisTemplate.opsForHash().entries(redisKey);
 
         int x = redisValue.containsKey("x") ? Integer.parseInt((String) redisValue.get("x")) : 20;
@@ -83,17 +79,17 @@ public class MovementController {
 
         // 모든 유저의 위치 정보를 Redis에서 조회
         List<PositionResponse> allPositions = userRepository.findAll().stream()
-                .map(u -> {
-                    String key = "user:display_location:" + u.getId();
-                    Map<Object, Object> v = redisTemplate.opsForHash().entries(key);
-                    if (v.isEmpty()) return null;
-                    int px = v.containsKey("x") ? Integer.parseInt((String) v.get("x")) : 20;
-                    int py = v.containsKey("y") ? Integer.parseInt((String) v.get("y")) : 11;
-                    String pr = v.containsKey("roomName") ? (String) v.get("roomName") : null;
-                    return new PositionResponse(String.valueOf(u.getId()), px, py, pr);
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+            .map(u -> {
+                String key = "user:display_location:" + u.getId();
+                Map<Object, Object> v = redisTemplate.opsForHash().entries(key);
+                if (v.isEmpty()) return null;
+                int px = v.containsKey("x") ? Integer.parseInt((String) v.get("x")) : 20;
+                int py = v.containsKey("y") ? Integer.parseInt((String) v.get("y")) : 11;
+                String pr = v.containsKey("roomName") ? (String) v.get("roomName") : null;
+                return new PositionResponse(u.getNickname(), px, py, pr);
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
 
         return allPositions;
     }
@@ -102,14 +98,9 @@ public class MovementController {
     @SendTo("/topic/positions")
     @Transactional
     public Collection<PositionResponse> portal(PortalRequest message) {
-        Long userId;
-        try {
-            userId = Long.parseLong(message.getUserId());
-        } catch (NumberFormatException e) {
-            return Collections.emptyList();
-        }
+        String nickname = message.getNickname();
 
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userRepository.findByNickname(nickname).orElse(null);
         if (user == null) {
             return Collections.emptyList();
         }
@@ -120,7 +111,7 @@ public class MovementController {
         }
 
         // Redis에서 위치 정보 조회
-        String redisKey = "user:display_location:" + userId;
+        String redisKey = "user:display_location:" + user.getId();
         Map<Object, Object> redisValue = redisTemplate.opsForHash().entries(redisKey);
 
         int x = redisValue.containsKey("x") ? Integer.parseInt((String) redisValue.get("x")) : 20;
@@ -132,13 +123,13 @@ public class MovementController {
         }
 
         int nextIdx = "left".equals(message.getPortalDirection())
-                ? (idx - 1 + PATH.size()) % PATH.size()
-                : (idx + 1) % PATH.size();
+            ? (idx - 1 + PATH.size()) % PATH.size()
+            : (idx + 1) % PATH.size();
         String nextRoomName = PATH.get(nextIdx);
 
         // 다음 방 엔티티 조회 및 User.room 업데이트
         Room nextRoomEntity = roomRepository.findByRoomName(nextRoomName)
-                .orElseThrow(() -> new RuntimeException("다음 방을 찾을 수 없습니다: " + nextRoomName));
+            .orElseThrow(() -> new RuntimeException("다음 방을 찾을 수 없습니다: " + nextRoomName));
         user.setRoom(nextRoomEntity);
         userRepository.save(user);
 
@@ -159,16 +150,16 @@ public class MovementController {
     // 모든 유저의 위치 정보를 Redis에서 조회
     private List<PositionResponse> getAllPositions() {
         return userRepository.findAll().stream()
-                .map(u -> {
-                    String key = "user:display_location:" + u.getId();
-                    Map<Object, Object> v = redisTemplate.opsForHash().entries(key);
-                    if (v.isEmpty()) return null;
-                    int px = v.containsKey("x") ? Integer.parseInt((String) v.get("x")) : 20;
-                    int py = v.containsKey("y") ? Integer.parseInt((String) v.get("y")) : 11;
-                    String pr = v.containsKey("roomName") ? (String) v.get("roomName") : null;
-                    return new PositionResponse(String.valueOf(u.getId()), px, py, pr);
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+            .map(u -> {
+                String key = "user:display_location:" + u.getId();
+                Map<Object, Object> v = redisTemplate.opsForHash().entries(key);
+                if (v.isEmpty()) return null;
+                int px = v.containsKey("x") ? Integer.parseInt((String) v.get("x")) : 20;
+                int py = v.containsKey("y") ? Integer.parseInt((String) v.get("y")) : 11;
+                String pr = v.containsKey("roomName") ? (String) v.get("roomName") : null;
+                return new PositionResponse(u.getNickname(), px, py, pr);
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
     }
 }
