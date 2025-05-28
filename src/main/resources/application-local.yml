@@ -1,0 +1,33 @@
+spring:
+  jackson:
+    time-zone: Asia/Seoul
+  datasource: # AWS RDS
+    url: ${RDS_URL} # 로컬에서는 ssh 터널링 등으로 접근
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create # 개발 편의를 위해 create 사용
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  data:
+    redis:
+      host: localhost  # 로컬 Redis 사용 시
+      port: 6379 # Docker에서 Redis 컨테이너가 6379 포트를 사용하므로, 호스트에서도 동일한 포트를 사용
+      # password: ${REDIS_PASSWORD} 로컬 Redis 비밀번호 설정 (필요시)
+  sql:
+    init:
+      mode: never
+api:
+  clova:
+    base-url: ${CLOVA_URL}
+    task-id: ${CLOVA_TASK_ID}
+    key: ${CLOVA_KEY}
+    ai_key: ${CLOVA_PLAYGROUND_KEY}
+  perplexity:
+    url: https://api.perplexity.ai
+    key: ${PERPLEXITY_KEY}
