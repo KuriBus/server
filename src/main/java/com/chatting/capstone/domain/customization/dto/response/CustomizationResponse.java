@@ -6,7 +6,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class CustomizationResponse {
-    private Long userId;
-    private int hairType;
-    private int outfitType;
+    private String nickname;
+    private int bodyType;
 }
