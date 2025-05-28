@@ -29,33 +29,33 @@ public class RoomService {
         List<Room> rooms = roomRepository.findAll();
 
         return rooms.stream().map(room ->
-                new RoomResponse(
-                        room.getId(),
-                        room.getRoomName(),
-                        room.getUsers().stream()
-                                .map(user -> new UserResponse(user.getNickname()))
-                                .collect(Collectors.toList())
-                )
+            new RoomResponse(
+                room.getId(),
+                room.getRoomName(),
+                room.getUsers().stream()
+                    .map(user -> new UserResponse(user.getNickname()))
+                    .collect(Collectors.toList())
+            )
         ).collect(Collectors.toList());
     }
 
     // 방 입장
     @Transactional
-    public void joinRoomById(Long userId, Long roomId) {
-
+    public void joinRoomByNickname(String nickname, Long roomId) {
+        //전체 닉네임으로
         // 1. 사용자 조회
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다. ID: " + userId));
+        User user = userRepository.findByNickname(nickname)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다. ID: " + nickname));
 
         // 2. 입장할 방 조회
         Room targetRoom = roomRepository.findById(roomId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "입장하려는 방을 찾을 수 없습니다. ID: " + roomId));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                "입장하려는 방을 찾을 수 없습니다. ID: " + roomId));
 
         // 3. 이미 해당 방에 있는지 확인
         if (user.getRoom() != null && user.getRoom().getId().equals(roomId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, // 409 Conflict
-                    "이미 해당 방(" + targetRoom.getRoomName() + ")에 참여 중입니다.");
+                "이미 해당 방(" + targetRoom.getRoomName() + ")에 참여 중입니다.");
         }
 
         // 4. 사용자에게 방 정보 설정
@@ -68,31 +68,32 @@ public class RoomService {
 
         // 7. Redis에 초기 위치 정보 저장/갱신
         // userId를 String으로 변환하여 사용 (UserLocationService 스펙에 맞춤)
-        userLocationService.setUserLocation(String.valueOf(userId), targetRoom.getRoomName(), centerX, centerY);
+        userLocationService.setUserLocation(nickname, targetRoom.getRoomName(), centerX, centerY);  //닉네임
     }
 
     // 방 퇴장
     @Transactional
-    public void  leaveRoom(Long roomId, Long userId) {
+    public void  leaveRoom(Long roomId, String nickname) {
+        //전체 닉네임으로
         // 1. 방 찾기
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        ResponseStatus.ROOM_NOT_FOUND.getStatus(),
-                        ResponseStatus.ROOM_NOT_FOUND.name()
-                ));
+            .orElseThrow(() -> new ResponseStatusException(
+                ResponseStatus.ROOM_NOT_FOUND.getStatus(),
+                ResponseStatus.ROOM_NOT_FOUND.name()
+            ));
 
         // 2. 유저 찾기
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        ResponseStatus.USER_NOT_FOUND.getStatus(),
-                        ResponseStatus.USER_NOT_FOUND.name()
-                ));
+        User user = userRepository.findByNickname(nickname)
+            .orElseThrow(() -> new ResponseStatusException(
+                ResponseStatus.USER_NOT_FOUND.getStatus(),
+                ResponseStatus.USER_NOT_FOUND.name()
+            ));
 
         // 3. 유저가 현재 방에 속해 있는지 확인
         if (user.getRoom() == null || !user.getRoom().getId().equals(room.getId())) {
             throw new ResponseStatusException(
-                    ResponseStatus.USER_NOT_IN_ROOM.getStatus(),
-                    ResponseStatus.USER_NOT_IN_ROOM.name()
+                ResponseStatus.USER_NOT_IN_ROOM.getStatus(),
+                ResponseStatus.USER_NOT_IN_ROOM.name()
             );
         }
 
@@ -102,6 +103,6 @@ public class RoomService {
 
         // 5. Redis에서 사용자 위치 정보 삭제
         // userId를 String으로 변환하여 전달 (UserLocationService 스펙 확인)
-        userLocationService.deleteUserLocation(String.valueOf(userId));
+        userLocationService.deleteUserLocation(nickname); //닉네임으로
     }
 }
