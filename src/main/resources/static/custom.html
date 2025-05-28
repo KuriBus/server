@@ -12,29 +12,16 @@
 
 <br><br>
 
-<label for="hair">머리 스타일:</label>
-<select id="hair">
-  <option value="0">기본</option>
-  <option value="1">짧은 머리</option>
-  <option value="2">긴 머리</option>
-  <option value="3">파마</option>
-  <option value="4">포니테일</option>
-  <option value="5">스포츠컷</option>
+<label for="body">body 스타일:</label>
+<select id="body">
+  <option value="1">남자 1</option>
+  <option value="2">남자 2</option>
+  <option value="3">남자 3</option>
+  <option value="4">여자 1</option>
+  <option value="5">여자 2</option>
+  <option value="6">여자 3</option>
 </select>
 
-<br><br>
-
-<label for="outfit">옷 스타일:</label>
-<select id="outfit">
-  <option value="0">기본 옷</option>
-  <option value="1">청바지</option>
-  <option value="2">슈트</option>
-  <option value="3">운동복</option>
-  <option value="4">드레스</option>
-  <option value="5">후드티</option>
-</select>
-
-<br><br>
 <button onclick="submitCustomization()">저장</button>
 
 <h3>브로드캐스트 수신 로그</h3>
@@ -53,9 +40,9 @@
     stompClient.subscribe('/topic/customization', function (message) {
       const data = JSON.parse(message.body);
       const log = `📣 브로드캐스트 수신됨!
-유저 ID: ${data.userId}
-머리 타입: ${data.hairType}
-옷 타입: ${data.outfitType}
+닉네임: ${data.nickname}
+몸통 타입: ${data.bodyType}
+
 ==============================`;
       document.getElementById("broadcastLog").innerText += log + '\n';
     });
@@ -64,8 +51,7 @@
   // === REST API 호출 ===
   function submitCustomization() {
     const nickname = document.getElementById("nickname").value;
-    const hairType = document.getElementById("hair").value;
-    const outfitType = document.getElementById("outfit").value;
+    const bodyType = document.getElementById("body").value;
 
     if (!nickname) {
       alert("닉네임을 입력하세요.");
@@ -79,8 +65,7 @@
       },
       body: JSON.stringify({
         nickname: nickname,
-        hairType: parseInt(hairType),
-        outfitType: parseInt(outfitType)
+        bodyType: parseInt(bodyType),
       })
     })
     .then(response => {

@@ -7,6 +7,5 @@ import lombok.Setter;
 @Setter
 public class CustomizationRequest {
     private String nickname;
-    private int hairType;
-    private int outfitType;
+    private int bodyType;
 }

@@ -34,16 +34,15 @@ public class CustomizationService {
             .orElse(new Customization());
 
         customization.setUser(user);
-        customization.setHairType(customizationRequest.getHairType());
-        customization.setOutfitType(customizationRequest.getOutfitType());
+        customization.setBodyType(customizationRequest.getBodyType());
+        customization.setNickname(customizationRequest.getNickname());
 
         customizationRepository.save(customization);
 
         // WebSocket 브로드캐스트
         CustomizationResponse response = new CustomizationResponse(
-            user.getId(),
-            customization.getHairType(),
-            customization.getOutfitType()
+            user.getNickname(),
+            customization.getBodyType()
         );
         System.out.println("Broadcasting customization update: " + response);
         messagingTemplate.convertAndSend("/topic/customization", response);

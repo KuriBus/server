@@ -20,7 +20,8 @@ public class Customization {
     @JoinColumn(name = "user_id")
     private User user;
 
-    private int hairType;
-    private int outfitType;
+    private String nickname;
+
+    private int bodyType;
 
 }
