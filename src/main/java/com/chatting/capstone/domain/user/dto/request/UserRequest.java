@@ -6,5 +6,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserRequest {
-    private Long userId;
+    private String nickname;  //이것도 닉네임으로
 }

@@ -17,9 +17,9 @@ public class MovementService {
     private final SimpMessagingTemplate messagingTemplate;
 
     // WASD 이동 요청 처리 (좌표 제한 포함)
-    public void handleMovement(String userId, String key) {
+    public void handleMovement(String nickname, String key) {
         // 1. Redis에서 현재 위치 정보 가져오기
-        Map<String, String> location = userLocationService.getUserLocation(userId);
+        Map<String, String> location = userLocationService.getUserLocation(nickname);
         if (location.isEmpty()) {
             return; // 위치 정보 없으면 이동 불가
         }
@@ -70,19 +70,19 @@ public class MovementService {
         // 4. 좌표가 실제로 변경되었는지 확인
         if (newX != currentX || newY != currentY) {
             // 4.1 Redis 업데이트
-            userLocationService.setUserLocation(userId, currentRoomName, newX, newY);
+            userLocationService.setUserLocation(nickname, currentRoomName, newX, newY);
 
             // 4.2 같은 방 사용자들에게 이동 결과 브로드캐스트 (다음 이슈에서 구현)
-            /*
+
             String destination = "/topic/room/" + currentRoomName + "/move";
             Map<String, Object> payload = Map.of(
                 "type", "MOVE",
-                "userId", userId,
+                "nickname", nickname,
                 "x", newX,
                 "y", newY
             );
             messagingTemplate.convertAndSend(destination, payload);
-            */
+
         }
     }
 

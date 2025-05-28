@@ -77,9 +77,8 @@
       overflow-y: auto;
       margin-bottom: 10px;
       font-size: 14px;
-      max-height: 150px;  /* 최대 높이 설정 (필요한 경우 조정) */
+      max-height: 150px;
     }
-
     #chatInput {
       width: 100%;
       height: 30px;
@@ -91,10 +90,14 @@
 </head>
 <body>
 <div id="userForm">
-  <label for="userIdInput">유저 아이디: </label>
-  <input type="text" id="userIdInput" placeholder="user1234">
   <label for="nicknameInput">닉네임: </label>
   <input type="text" id="nicknameInput" placeholder="사용자 이름">
+  <label for="roomSelect">입장할 방: </label>
+  <select id="roomSelect">
+    <option value="1">Room 1</option>
+    <option value="2">Room 2</option>
+    <option value="3">Room 3</option>
+  </select>
   <button id="startBtn">시작</button>
 </div>
 <div id="game">
@@ -107,7 +110,6 @@
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script>
-  let userId = null;
   let nickname = null;
   let stompClient = null;
   const game = document.getElementById('game');
@@ -128,43 +130,69 @@
   });
   const zoneIdMap = {
     "Room 1": 1,
-    "Bridge 1": 2,
-    "Room 2": 3,
-    "Bridge 2": 4,
-    "Room 3": 5,
+    "Room 2": 2,
+    "Room 3": 3,
+    "Bridge 1": 4,
+    "Bridge 2": 5,
     "Bridge 3": 6
   };
 
-  document.getElementById('startBtn').onclick = function() {
-    userId = document.getElementById('userIdInput').value.trim();
+  document.getElementById('startBtn').onclick = async function() {
     nickname = document.getElementById('nicknameInput').value.trim();
-    if (!userId || !nickname) return alert('유저 아이디와 닉네임을 입력하세요!');
+    const selectedRoomId = document.getElementById('roomSelect').value;
+
+    if (!nickname) return alert('닉네임을 입력하세요!');
+    if (!selectedRoomId) return alert('입장할 방을 선택하세요');
+    try {
+      const res = await fetch(`http://localhost:8080/api/rooms/${selectedRoomId}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nickname: nickname // 서버에서 닉네임 기반으로 userId 처리하고 있다면 그대로
+        })
+      });
+      if (!res.ok) {
+        alert('방 입장에 실패했습니다.');
+        return;
+      }
+    } catch (err) {
+      console.error(err);
+      alert('방 입장 중 오류 발생');
+      return;
+    }
+
+    // Step 2: UI 전환
     document.getElementById('userForm').style.display = 'none';
     chatbox.style.display = 'flex';
 
-    const socket = new SockJS('http://localhost:8080/ws/app?userId=' + userId + '&nickname=' + encodeURIComponent(nickname));
+    const socket = new SockJS('http://localhost:8080/ws/app');
     stompClient = Stomp.over(socket);
 
-    let myZone = "Room 1"; // 기본적으로 'Room 1'에 설정
+    let myZone = "Room 1"; // 기본 위치
     let myPos = { x: CENTER_X, y: CENTER_Y };
 
     stompClient.connect({}, function () {
+      // 초기 위치 전송
       stompClient.send("/app/move", {}, JSON.stringify({
-        userId: userId,
+        nickname: nickname,
         direction: "init"
       }));
 
+      // 위치 업데이트 수신
       stompClient.subscribe('/topic/positions', function (message) {
         const allPositions = JSON.parse(message.body);
-        const me = allPositions.find(pos => pos.userId === userId);
+        const me = allPositions.find(pos => pos.nickname === nickname);
         if (me && me.roomName !== undefined) {
-          myZone = me.roomName; // 현재 위치한 방으로 업데이트
+          myZone = me.roomName; // 현재 위치한 방 갱신
           myPos = { x: me.x, y: me.y };
         }
 
-        game.innerHTML = '';
-        game.appendChild(chatbox);
+        const oldZoneDiv = game.querySelector('.zone');
+        if (oldZoneDiv) {
+          game.removeChild(oldZoneDiv);
+        }
 
+        // zoneDiv 및 배경, 포탈 그리기
         let zoneDiv = document.createElement('div');
         zoneDiv.className = 'zone ' + (myZone.startsWith('Room') ? 'room' : 'bridge');
         zoneDiv.innerHTML = `<span class="zone-label">${myZone}</span>`;
@@ -187,30 +215,42 @@
           char.className = 'character';
           char.style.left = (Math.max(0, Math.min(1600 - 40, pos.x * GRID_W))) + 'px';
           char.style.top = (Math.max(0, Math.min(900 - 40, pos.y * GRID_H))) + 'px';
-          char.textContent = pos.userId === userId ? '나' : '';
+          char.textContent = pos.nickname === nickname ? nickname : '';
           zoneDiv.appendChild(char);
         });
       });
+      localStorage.setItem("nickname", nickname);
+      localStorage.setItem("roomId", selectedRoomId); // 방 번호 문자열로 저장
 
-      // 채팅 수신
+      window.addEventListener("beforeunload", () => {
+        const nickname = localStorage.getItem("nickname");
+        const roomId = localStorage.getItem("roomId");
+
+        if (nickname && roomId) {
+          navigator.sendBeacon(
+              "http://localhost:8080/api/movement/leave",
+              new Blob([JSON.stringify({ nickname, roomId })], {
+                type: "application/json",
+              })
+          );
+        }
+      });
+      // 채팅 수신 (닉네임 기반 roomIdMap 사용)
       stompClient.subscribe(`/topic/room/${zoneIdMap[myZone]}`, function (msg) {
         const text = msg.body;
         const div = document.createElement('div');
         div.textContent = `${nickname}: ${text}`;
-
-
         messages.appendChild(div);
         messages.scrollTop = messages.scrollHeight;
       });
     });
 
     document.addEventListener('keydown', function(e) {
-      if (!stompClient || !userId) return;
+      if (!stompClient || !nickname) return;
       if (e.key === 'Enter' && document.activeElement === chatInput) {
         const msg = chatInput.value.trim();
         if (msg !== '') {
           stompClient.send("/app/chat.send", {}, JSON.stringify({
-            userId: userId,
             nickname: nickname,
             content: msg,
             roomId: zoneIdMap[myZone]
@@ -218,12 +258,18 @@
           chatInput.value = '';
         }
       } else if (['w','a','s','d'].includes(e.key)) {
-        stompClient.send("/app/move", {}, JSON.stringify({userId: userId, direction: e.key}));
+        stompClient.send("/app/move", {}, JSON.stringify({
+          nickname: nickname,
+          direction: e.key
+        }));
       } else if (e.key === 'e') {
         const portals = portalPositions[myZone] || [];
         const match = portals.find(p => p.x === myPos.x && p.y === myPos.y);
         if (match) {
-          stompClient.send("/app/portal", {}, JSON.stringify({userId: userId, portalDirection: match.direction}));
+          stompClient.send("/app/portal", {}, JSON.stringify({
+            nickname: nickname,
+            portalDirection: match.direction
+          }));
         }
       }
     });
