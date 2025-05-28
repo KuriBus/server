@@ -26,6 +26,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws/app")
             .setAllowedOrigins(
+                    "http://localhost:63342",
                     "https://kuriverse.com") // CORS 허용 부분 정확히 지정
             .withSockJS(); // SockJS fallback 지원
     }
