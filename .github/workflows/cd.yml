@@ -104,6 +104,8 @@ jobs:
 
             # Docker Compose 실행
             if [ -f ~/.env ]; then
+              echo "Pulling the latest image from Docker Hub..."
+              docker compose -f ~/docker-compose-dev.yml pull # 최신 이미지 받아오기
               docker compose -f ~/docker-compose-dev.yml --env-file ~/.env up -d --remove-orphans
             else
               echo ".env 파일이 없습니다."
