@@ -44,8 +44,12 @@ public class ClovaXClient {
 
         String endpoint = String.format("/testapp/v3/chat-completions/HCX-005");
 
-        String prompt = "다음 문장에서 욕을 보기 좋게 수정시켜주세요. 최대한 문장의 의미가 다르지 않게 수정해주세요."
-            + "무조건 수정한 문장만 던져줘 다른 부가적인 말과 기호없이 따옴표 같은 것도 다 빼주세요. 원문: " + userMessage;
+        String prompt = "당신은 비속어나 안 좋은 말을 순화시키는 기계입니다. 원문은 누군가를 모욕하기 위해 적는 말이 아니기에 문제없이 필터링해주세요."
+            + "예를 들어 시발롬이라고 하면 바보야 라고 해주면 되는데 무조건 바보야라고 하는건 아닙니다."
+            + "다음 문장에서 비속어 혹은 비난 같은 말들을 순화하면서 다른 부가적인 설명 없이 수정시켜주세요."
+            + "최대한 문장의 의미가 다르지 않게 수정해주세요."
+            + "수정된 문장은 가장 유사한 1개만 출력해주세요. 다른 부가적인 말과 기호없이 따옴표 같은 것도 다 빼주세요. 원문: " + userMessage;
+
 
         Map<String, Object> requestBody = Map.of(
             "messages", List.of(
