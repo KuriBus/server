@@ -49,14 +49,12 @@ public class ChatService {
     }
 
     public List<ChatResponse> getChatsByRoom(Long roomId) {
-        Room room = roomRepository.findById(roomId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
-        return chatRepository.findAllByRoomOrderByCreatedAtAsc(room).stream()
+        return chatRepository.findAllByRoomIdOrderByCreatedAtAsc(roomId).stream()
             .map(chat -> ChatResponse.builder()
                 .id(chat.getId())
-                .userId(chat.getUser().getId())  //userid도 같이 반환되게
+                .userId(chat.getUser().getId())
                 .nickname(chat.getNickname())
-                .content(chat.getFilteredContent()) //필터링된 문장만 출력
+                .content(chat.getFilteredContent())
                 .createdAt(chat.getCreatedAt())
                 .build())
             .collect(Collectors.toList());
