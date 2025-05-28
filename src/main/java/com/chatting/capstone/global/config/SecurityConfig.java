@@ -40,7 +40,6 @@ public class SecurityConfig implements WebMvcConfigurer {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:8080",    // 기존 설정 (백엔드와 같은 출처일 경우)
-                "http://localhost:63342",   // 실제 프론트엔드 Origin
                 "http://localhost:5173",    // 프론트엔드 로컬호스트
                 "https://kuriverse.com"     // 도메인 주소 추가
         ));
