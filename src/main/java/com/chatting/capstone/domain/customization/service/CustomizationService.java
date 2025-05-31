@@ -6,13 +6,12 @@ import com.chatting.capstone.domain.customization.entity.Customization;
 import com.chatting.capstone.domain.customization.repository.CustomizationRepository;
 import com.chatting.capstone.domain.user.entity.User;
 import com.chatting.capstone.domain.user.repository.UserRepository;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
-
+import com.chatting.capstone.global.response.CustomException;
+import com.chatting.capstone.global.response.ResponseStatus;
 
 @Service
 @Slf4j
@@ -23,12 +22,9 @@ public class CustomizationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
 
-
     public void updateCustomization(CustomizationRequest customizationRequest) {
-        Optional<User> userOptional = userRepository.findByNickname(customizationRequest.getNickname());
-        if (userOptional.isEmpty()) throw new RuntimeException("사용자 없음");
-
-        User user = userOptional.get();
+        User user = userRepository.findByNickname(customizationRequest.getNickname())
+                .orElseThrow(() -> new CustomException(ResponseStatus.USER_NOT_FOUND));
 
         Customization customization = customizationRepository.findByUser(user)
             .orElse(new Customization());
@@ -47,5 +43,4 @@ public class CustomizationService {
         System.out.println("Broadcasting customization update: " + response);
         messagingTemplate.convertAndSend("/topic/customization", response);
     }
-
 }
