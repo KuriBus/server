@@ -33,29 +33,28 @@ public class ClovaService {
      * @param sentence The input prompt for the AI
      * @return The API response as a String
      */
-    public String appraiseSentence(String sentence) {
+    public Mono<String> appraiseSentence(String sentence) {
         String requestId = UUID.randomUUID().toString().substring(0, 10);
         String endpoint = String.format("/testapp/v1/tasks/%s/search", clovaTaskId);
 
         var requestBody = Map.of(
-                "includeAiFilters", true,
-                "text", sentence
+            "includeAiFilters", true,
+            "text", sentence
         );
 
         return webClient.post()
-                .uri(clovaBaseUrl + endpoint)
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .header("Authorization", "Bearer " + clovaApiKey)
-                .header("X-NCP-CLOVASTUDIO-REQUEST-ID", requestId)
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .map(this::extractResponseText)
-                .onErrorResume(e -> {
-                    log.error("Error calling CLOVA API: {}", e.getMessage());
-                    return Mono.just("CLOVA API 호출 중 오류가 발생했습니다.");
-                })
-                .block();
+            .uri(clovaBaseUrl + endpoint)
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .header("Authorization", "Bearer " + clovaApiKey)
+            .header("X-NCP-CLOVASTUDIO-REQUEST-ID", requestId)
+            .bodyValue(requestBody)
+            .retrieve()
+            .bodyToMono(Map.class)
+            .map(this::extractResponseText)
+            .onErrorResume(e -> {
+                log.error("Error calling CLOVA API: {}", e.getMessage());
+                return Mono.just("CLOVA API 호출 중 오류가 발생했습니다.");
+            });
     }
 
     private String extractResponseText(Map<String, Object> response) {

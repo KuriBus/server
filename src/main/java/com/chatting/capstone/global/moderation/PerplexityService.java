@@ -1,3 +1,4 @@
+/*
 package com.chatting.capstone.global.moderation;
 
 import lombok.RequiredArgsConstructor;
@@ -28,11 +29,13 @@ public class PerplexityService {
     private final WebClient webClient;
     private final ClovaService clovaService;
 
-    /**
+    */
+/**
      * Transform a negative sentence into a positive one
      * @param sentence The sentence to transform
      * @return The positive version of the sentence
-     */
+     *//*
+
     public String transformToPositive(String sentence) {
         // First, check if the sentence is negative using Clova
         String clovaResult = clovaService.appraiseSentence(sentence);
@@ -71,7 +74,8 @@ public class PerplexityService {
         requestBody.put("top_p", 0.9);
 
         // Search domain filter setup
-        /*List<String> searchDomainFilter = new ArrayList<>();
+        */
+/*List<String> searchDomainFilter = new ArrayList<>();
         searchDomainFilter.add("<any>");
         requestBody.put("search_domain_filter", null);
 
@@ -89,7 +93,8 @@ public class PerplexityService {
         // Web search options setup
         Map<String, String> webSearchOptions = new HashMap<>();
         webSearchOptions.put("search_context_size", "high");
-        requestBody.put("web_search_options", webSearchOptions);*/
+        requestBody.put("web_search_options", webSearchOptions);*//*
+
 
         requestBody.remove("search_domain_filter");
         requestBody.remove("response_format");
@@ -143,3 +148,4 @@ public class PerplexityService {
         }
     }
 }
+*/

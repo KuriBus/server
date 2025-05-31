@@ -8,8 +8,7 @@ import com.chatting.capstone.global.moderation.ClovaService;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -20,16 +19,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class ChatController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
     private final ClovaService clovaService;
     private final ClovaXClient clovaXClient;
-    private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
     // 채팅 전송
     @MessageMapping("/chat.send")
@@ -37,42 +37,76 @@ public class ChatController {
         String nickname = dto.getNickname();
         accessor.getSessionAttributes().put("nickname", nickname); // userId 대신 nickname
 
+        processMessage(dto, nickname);
+    }
+
+    private void processMessage(ChatRequest dto, String nickname) {
+        long startTime = System.currentTimeMillis(); // 전체 처리 시작 시점
         try {
             validateMessage(dto.getContent());
             String originalContent = dto.getContent();
-            long startTime = System.currentTimeMillis();
 
-            String isInAppropriate = clovaService.appraiseSentence(originalContent);
-            ChatResponse chatResponse;
+            long appraisalStart = System.currentTimeMillis(); // Clova appraisal 시작
 
-            if ("1".equals(isInAppropriate)) {
-                messagingTemplate.convertAndSend("/queue/warnings/" + nickname,
-                    "⚠️ 부적절한 표현이 감지되어 자동으로 수정되었습니다.");
+            clovaService.appraiseSentence(originalContent)
+                .flatMap(isInappropriate -> {
+                    long appraisalEnd = System.currentTimeMillis(); // Clova appraisal 종료
+                    log.info("[{}] Clova appraisal duration: {}ms", nickname, appraisalEnd - appraisalStart);
 
-                CompletableFuture<String> filteredMessageFuture = clovaXClient.filterMessageAsync(originalContent);
-                String filteredContent = filteredMessageFuture.get();
-                chatResponse = chatService.save(dto, filteredContent);
-            } else {
-                chatResponse = chatService.save(dto, originalContent);
-            }
+                    if ("1".equals(isInappropriate)) {
+                        messagingTemplate.convertAndSend("/queue/warnings/" + nickname,
+                            "⚠️ 부적절한 표현이 감지되어 자동으로 수정되었습니다.");
 
-            long elapsedTime = System.currentTimeMillis() - startTime;
-            long minDelay = 100;
-            if (elapsedTime < minDelay) {
-                Thread.sleep(minDelay - elapsedTime);
-            }
+                        long clovaXStart = System.currentTimeMillis(); // ClovaX 시작
 
-            messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), chatResponse);
+                        return clovaXClient.filterMessageAsync(originalContent)
+                            .flatMap(filteredContent -> {
+                                long clovaXEnd = System.currentTimeMillis();
+                                long clovaXDuration = clovaXEnd - clovaXStart;
+                                long totalDuration = clovaXEnd - startTime;
+
+                                log.info("[{}] ClovaX filtering duration: {}ms", nickname, clovaXDuration);
+                                log.info("[{}] Total time until message sent: {}ms", nickname, totalDuration);
+
+                                ChatResponse response = chatService.save(dto, filteredContent);
+                                return Mono.just(response);
+                            });
+                    } else {
+                        long totalEnd = System.currentTimeMillis();
+                        log.info("[{}] No filtering needed. Total time until message sent: {}ms", nickname, totalEnd - startTime);
+                        return Mono.just(chatService.save(dto, originalContent));
+                    }
+                })
+                .doOnSuccess(chatResponse -> sendWithDelay(dto.getRoomId(), chatResponse, startTime))
+                .doOnError(e -> {
+                    log.error("채팅 처리 중 비동기 예외 발생: {}", e.getMessage(), e);
+                    sendErrorToUser(nickname, "채팅 전송 중 오류가 발생했습니다.");
+                })
+                .subscribe();
 
         } catch (IllegalArgumentException e) {
-            logger.error("빈 메시지 수신: {}", e.getMessage());
+            log.error("빈 메시지 수신: {}", e.getMessage());
             sendErrorToUser(nickname, "메시지 전송 실패: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("채팅 전송 중 예외 발생: {}", e.getMessage());
+            log.error("채팅 전송 중 예외 발생: {}", e.getMessage(), e);
             sendErrorToUser(nickname, "채팅 전송 중 오류가 발생했습니다.");
         }
     }
 
+    private void sendWithDelay(Long roomId, ChatResponse chatResponse, long startTime) {
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        long minDelay = 100;
+
+        if (elapsedTime < minDelay) {
+            try {
+                Thread.sleep(minDelay - elapsedTime);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, chatResponse);
+    }
     //사용자에게 에러 메세지 전송
     private void sendErrorToUser(String nickname, String errorMessage) {
         messagingTemplate.convertAndSend("/queue/errors/" + nickname, errorMessage);
@@ -98,7 +132,7 @@ public class ChatController {
         String userId = (String) accessor.getSessionAttributes().get("userId");
 
         if (userId != null) {
-            logger.error("세션 종료: userId={} 연결 끊김", userId);
+            log.error("세션 종료: userId={} 연결 끊김", userId);
             sendErrorToUser(userId, "연결이 끊어졌습니다. 다시 연결을 시도해주세요.");
         }
     }
@@ -106,6 +140,6 @@ public class ChatController {
     // 전역 예외 처리 (WebSocket)
     @MessageExceptionHandler
     public void handleException(Exception e) {
-        logger.error("WebSocket 메시지 처리 중 오류: ", e);
+        log.error("WebSocket 메시지 처리 중 오류: ", e);
     }
 }
