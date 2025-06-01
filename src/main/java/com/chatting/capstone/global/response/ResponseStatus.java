@@ -13,10 +13,17 @@ public enum ResponseStatus {
     NICKNAME_TAKEN(HttpStatus.CONFLICT, "사용중인 닉네임입니다."),
     USER_ALREADY_LOGGED_IN(HttpStatus.CONFLICT, "이미 로그인한 유저입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 유저를 찾을 수 없습니다."),
+    NICKNAME_REQUIRED(HttpStatus.BAD_REQUEST, "닉네임을 입력해주세요."),
 
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방을 찾을 수 없습니다."),
     ALREADY_IN_ROOM(HttpStatus.CONFLICT, "이미 해당 방에 접속 중입니다."),
     USER_NOT_IN_ROOM(HttpStatus.BAD_REQUEST, "유저는 해당 방에 속해 있지 않습니다."),
+
+    LOCATION_NOT_FOUND(HttpStatus.NOT_FOUND, "위치 정보를 찾을 수 없습니다."),
+    INVALID_POSITION(HttpStatus.BAD_REQUEST, "좌표 값이 잘못되었습니다."),
+    COORDINATE_NOT_FOUND(HttpStatus.NOT_FOUND, "좌표 정보를 찾을 수 없습니다."),
+
+    INVALID_MESSAGE(HttpStatus.UNPROCESSABLE_ENTITY, "빈 메시지는 보낼 수 없습니다."),
 
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
 
@@ -30,6 +37,9 @@ public enum ResponseStatus {
     ROOM_JOIN_SUCCESS(HttpStatus.OK, "방에 입장했습니다."),
     ROOM_LEAVE_SUCCESS(HttpStatus.OK, "방에서 퇴장했습니다."),
     ROOM_LIST_SUCCESS(HttpStatus.OK, "방 목록 조회에 성공했습니다."),
+
+    MOVE_SUCCESS(HttpStatus.OK, "이동 성공"),
+    COORDINATE_SUCCESS(HttpStatus.OK, "좌표 정보를 성공적으로 조회했습니다."),
 
     CUSTOMIZATION_UPDATE_SUCCESS(HttpStatus.OK, "커스터마이징이 성공적으로 업데이트되었습니다.");
 
