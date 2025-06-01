@@ -19,8 +19,8 @@ public class CoordinateController {
 
     // 좌표 조회
     @GetMapping("/{nickname}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> getUserCoordinate(@PathVariable String nickname) {
-        Map<String, String> location = coordinateService.getUserLocation(nickname);
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getUserCoordinate(@PathVariable String nickname) {
+        Map<String, Object> location = coordinateService.getUserLocation(nickname);
         if (location.isEmpty()) {
             throw new CustomException(ResponseStatus.COORDINATE_NOT_FOUND);
         }

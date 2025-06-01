@@ -3,6 +3,7 @@ package com.chatting.capstone.domain.location.service;
 import com.chatting.capstone.domain.user.repository.UserRepository;
 import com.chatting.capstone.global.response.CustomException;
 import com.chatting.capstone.global.response.ResponseStatus;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.HashOperations;
@@ -14,7 +15,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class CoordinateService {
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final UserRepository userRepository;
 
     // Redis Key Prefix (닉네임 기반)
@@ -27,31 +28,31 @@ public class CoordinateService {
 
     // 사용자의 위치 정보를 Redis Hash에 저장/업데이트
     public void setUserLocation(String nickname, String roomName, int x, int y) {
-        // 1. 유저 존재 여부 체크
         boolean exists = userRepository.existsByNickname(nickname);
         if (!exists) {
             throw new CustomException(ResponseStatus.USER_NOT_FOUND);
         }
 
-        // 2. 위치 정보 저장
         String key = USER_LOCATION_KEY_PREFIX + nickname;
         try {
-            HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
-            hashOps.put(key, FIELD_ROOM_NAME, roomName);
-            hashOps.put(key, FIELD_X, String.valueOf(x));
-            hashOps.put(key, FIELD_Y, String.valueOf(y));
-            redisTemplate.expire(key, 1, TimeUnit.HOURS);  // 1시간 후 자동 삭제
+            Map<String, Object> saveValue = new HashMap<>();
+            saveValue.put(FIELD_ROOM_NAME, roomName);
+            saveValue.put(FIELD_X, String.valueOf(x));
+            saveValue.put(FIELD_Y, String.valueOf(y));
+            HashOperations<String, String, Object> hashOps = redisTemplate.opsForHash();
+            hashOps.putAll(key, saveValue);
+            redisTemplate.expire(key, 1, TimeUnit.HOURS);
         } catch (Exception e) {
             throw new CustomException(ResponseStatus.SERVER_ERROR);
         }
     }
 
     // 특정 사용자의 전체 위치 정보(Map)를 Redis에서 가져옴
-    public Map<String, String> getUserLocation(String nickname) {
+    public Map<String, Object> getUserLocation(String nickname) {
         String key = USER_LOCATION_KEY_PREFIX + nickname;
         try {
-            HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
-            Map<String, String> result = hashOps.entries(key);
+            HashOperations<String, String, Object> hashOps = redisTemplate.opsForHash();
+            Map<String, Object> result = hashOps.entries(key);
             if (result == null) {
                 throw new CustomException(ResponseStatus.COORDINATE_NOT_FOUND);
             }
