@@ -1,31 +1,38 @@
 package com.chatting.capstone.domain.location.controller;
 
-import com.chatting.capstone.domain.location.service.UserLocationService;
+import com.chatting.capstone.domain.location.dto.request.CoordinateUpdateRequest;
+import com.chatting.capstone.domain.location.service.CoordinateService;
+import com.chatting.capstone.global.response.ApiResponse;
+import com.chatting.capstone.global.response.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
+import com.chatting.capstone.global.response.ResponseStatus;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/coordinates")
 public class CoordinateController {
 
-    private final UserLocationService userLocationService;
+    private final CoordinateService coordinateService;
 
-    // 특정 사용자의 현재 좌표 정보(방 이름 포함) 조회
-    @GetMapping("/{userId}")
-    public ResponseEntity<Map<String, String>> getUserCoordinate(@PathVariable  String userId) {
-        Map<String, String> location = userLocationService.getUserLocation(userId);
-
+    // 좌표 조회
+    @GetMapping("/{nickname}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getUserCoordinate(@PathVariable String nickname) {
+        Map<String, Object> location = coordinateService.getUserLocation(nickname);
         if (location.isEmpty()) {
-            // Redis에 사용자 위치 정보가 없으면 404 반환
-            return ResponseEntity.notFound().build();
-        } else {
-            // 정보가 있으면 200 OK 와 함께 Map 데이터 반환
-            return ResponseEntity.ok(location);
+            throw new CustomException(ResponseStatus.COORDINATE_NOT_FOUND);
         }
+        return ResponseEntity.ok(ApiResponse.of(ResponseStatus.COORDINATE_SUCCESS, location));
     }
 
-    // POST, PATCH, GET (all users) 엔드포인트는 구현 필요, WebSocket에서 처리
+    // 좌표 갱신
+    @PostMapping("/{nickname}")
+    public ResponseEntity<ApiResponse<Void>> updateUserCoordinate(
+            @PathVariable String nickname,
+            @RequestBody CoordinateUpdateRequest request) {
+        coordinateService.setUserLocation(nickname, request.getRoomName(), request.getX(), request.getY());
+        return ResponseEntity.ok(ApiResponse.of(ResponseStatus.COORDINATE_SUCCESS));
+    }
 }

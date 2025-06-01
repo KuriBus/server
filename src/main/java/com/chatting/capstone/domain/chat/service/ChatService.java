@@ -8,6 +8,8 @@ import com.chatting.capstone.domain.room.entity.Room;
 import com.chatting.capstone.domain.room.repository.RoomRepository;
 import com.chatting.capstone.domain.user.entity.User;
 import com.chatting.capstone.domain.user.repository.UserRepository;
+import com.chatting.capstone.global.response.CustomException;
+import com.chatting.capstone.global.response.ResponseStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,10 +25,10 @@ public class ChatService {
 
     public ChatResponse save(ChatRequest dto, String filteredContent) {
         Room room = roomRepository.findById(dto.getRoomId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
+            .orElseThrow(() -> new CustomException(ResponseStatus.ROOM_NOT_FOUND));
 
         User user = userRepository.findByNickname(dto.getNickname())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+            .orElseThrow(() -> new CustomException(ResponseStatus.USER_NOT_FOUND));
 
         Chat chat = Chat.builder()
             .room(room)

@@ -5,8 +5,8 @@ import com.chatting.capstone.domain.chat.dto.request.ChatRequest;
 import com.chatting.capstone.domain.chat.dto.response.ChatResponse;
 import com.chatting.capstone.domain.chat.service.ChatService;
 import com.chatting.capstone.global.moderation.ClovaService;
+import com.chatting.capstone.global.response.CustomException;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import reactor.core.publisher.Mono;
+import com.chatting.capstone.global.response.ResponseStatus;
 
 @RestController
 @RequiredArgsConstructor
@@ -115,7 +116,7 @@ public class ChatController {
     // 메시지 유효성 검사
     private void validateMessage(String content) {
         if (content == null || content.trim().isEmpty()) {
-            throw new IllegalArgumentException("빈 메시지는 보낼 수 없습니다.");
+            throw new CustomException(ResponseStatus.INVALID_MESSAGE);
         }
     }
 

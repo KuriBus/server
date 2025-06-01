@@ -2,8 +2,10 @@ package com.chatting.capstone.domain.customization.controller;
 
 import com.chatting.capstone.domain.customization.dto.request.CustomizationRequest;
 import com.chatting.capstone.domain.customization.service.CustomizationService;
+import com.chatting.capstone.global.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.chatting.capstone.global.response.ResponseStatus;
 
 @RestController
 @RequestMapping("/api/customization")
@@ -16,9 +18,10 @@ public class CustomizationController {
     }
 
     @PostMapping("/update")
-    public ResponseEntity<?> updateCustomization(@RequestBody CustomizationRequest request) {
+    public ResponseEntity<ApiResponse> updateCustomization(@RequestBody CustomizationRequest request) {
         customizationService.updateCustomization(request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity
+                .status(ResponseStatus.CUSTOMIZATION_UPDATE_SUCCESS.getStatus())
+                .body(ApiResponse.of(ResponseStatus.CUSTOMIZATION_UPDATE_SUCCESS));
     }
-
 }

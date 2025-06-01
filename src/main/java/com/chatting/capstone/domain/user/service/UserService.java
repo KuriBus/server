@@ -1,13 +1,12 @@
 package com.chatting.capstone.domain.user.service;
 
-import com.chatting.capstone.global.exception.ResponseStatus;
-import org.springframework.http.HttpStatus;
+import com.chatting.capstone.global.response.CustomException;
+import com.chatting.capstone.global.response.ResponseStatus;
 import com.chatting.capstone.domain.user.entity.User;
 import com.chatting.capstone.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -19,12 +18,12 @@ public class UserService {
     @Transactional
     public User loginOrCreate(String nickname, String ipAddress) {
         if (nickname == null || nickname.trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "닉네임을 입력해주세요.");
+            throw new CustomException(ResponseStatus.NICKNAME_REQUIRED);
         }
         User user = userRepository.findByNickname(nickname)
                 .map(existingUser -> { // 기존 사용자
                     if (existingUser.isActive()) {
-                        throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 로그인 중인 닉네임입니다.");
+                        throw new CustomException(ResponseStatus.NICKNAME_ALREADY_LOGGED_IN);
                     }
                     existingUser.setActive(true);
                     existingUser.setIpAddress(ipAddress);
@@ -47,8 +46,7 @@ public class UserService {
     @Transactional
     public void logout(User user) {
         if (user == null) {
-            throw new ResponseStatusException(ResponseStatus.USER_NOT_FOUND.getStatus(),
-                    ResponseStatus.USER_NOT_FOUND.name());
+            throw new CustomException(ResponseStatus.USER_NOT_FOUND);
         }
 
         user.setActive(false);
@@ -59,7 +57,7 @@ public class UserService {
     // 닉네임 중복 확인
     public void isNicknameTaken(String nickname) {
         if (userRepository.existsByNickname(nickname)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "사용중인 닉네임입니다.");
+            throw new CustomException(ResponseStatus.NICKNAME_TAKEN);
         }
         userRepository.existsByNickname(nickname);
     }

@@ -3,6 +3,8 @@ package com.chatting.capstone.domain.room.controller;
 import com.chatting.capstone.domain.room.dto.response.RoomResponse;
 import com.chatting.capstone.domain.room.service.RoomService;
 import com.chatting.capstone.domain.user.dto.request.UserRequest;
+import com.chatting.capstone.global.response.ApiResponse;
+import com.chatting.capstone.global.response.ResponseStatus;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,23 +24,28 @@ public class RoomController {
 
     // 방 목록 조회
     @GetMapping
-    public ResponseEntity<List<RoomResponse>> getAllRooms() {
+    public ResponseEntity<ApiResponse<List<RoomResponse>>> getAllRooms() {
         List<RoomResponse> rooms = roomService.getAllRooms();
-        return ResponseEntity.ok(rooms);
+        return ResponseEntity
+                .status(ResponseStatus.ROOM_LIST_SUCCESS.getStatus())
+                .body(ApiResponse.of(ResponseStatus.ROOM_LIST_SUCCESS, rooms));
     }
 
-    //입장 퇴장 모두 닉네임 기반으로
     // 방 입장
     @PostMapping("/{roomId}/join")
-    public ResponseEntity<String> joinRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
+    public ResponseEntity<ApiResponse> joinRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
         roomService.joinRoomByNickname(request.getNickname(), roomId);
-        return ResponseEntity.ok( "방에 성공적으로 입장했습니다.");
+        return ResponseEntity
+                .status(ResponseStatus.ROOM_JOIN_SUCCESS.getStatus())
+                .body(ApiResponse.of(ResponseStatus.ROOM_JOIN_SUCCESS));
     }
 
     // 방 퇴장
     @PostMapping("/{roomId}/leave")
-    public ResponseEntity<String> leaveRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
+    public ResponseEntity<ApiResponse> leaveRoom(@PathVariable Long roomId, @RequestBody UserRequest request) {
         roomService.leaveRoom(roomId, request.getNickname());
-        return ResponseEntity.ok("방에서 성공적으로 퇴장했습니다.");
+        return ResponseEntity
+                .status(ResponseStatus.ROOM_LEAVE_SUCCESS.getStatus())
+                .body(ApiResponse.of(ResponseStatus.ROOM_LEAVE_SUCCESS));
     }
 }

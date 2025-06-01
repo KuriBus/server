@@ -3,6 +3,9 @@ package com.chatting.capstone.domain.user.controller;
 import com.chatting.capstone.domain.user.dto.request.LoginRequest;
 import com.chatting.capstone.domain.user.entity.User;
 import com.chatting.capstone.domain.user.service.UserService;
+import com.chatting.capstone.global.response.ApiResponse;
+import com.chatting.capstone.global.response.CustomException;
+import com.chatting.capstone.global.response.ResponseStatus;
 import com.chatting.capstone.global.util.IpUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -24,7 +27,7 @@ public class UserController {
 
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest,
+    public ResponseEntity<ApiResponse> login(@RequestBody LoginRequest loginRequest,
             HttpSession session,
             HttpServletRequest request) {
         String nickname = loginRequest.getNickname();
@@ -32,27 +35,32 @@ public class UserController {
         User user = userService.loginOrCreate(nickname, ipAddress);
 
         session.setAttribute("user", user); // 세션에 사용자 정보 저장
-        return ResponseEntity.ok("로그인에 성공했습니다.");
+        return ResponseEntity
+                .status(ResponseStatus.LOGIN_SUCCESS.getStatus())
+                .body(ApiResponse.of(ResponseStatus.LOGIN_SUCCESS));
     }
 
     // 로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpSession session) {
+    public ResponseEntity<ApiResponse> logout(HttpSession session) {
         User user = (User) session.getAttribute("user");
-
         if (user != null) {
             userService.logout(user);
             session.invalidate();
-            return ResponseEntity.ok("로그아웃 되었습니다.");
+            return ResponseEntity
+                    .status(ResponseStatus.LOGOUT_SUCCESS.getStatus())
+                    .body(ApiResponse.of(ResponseStatus.LOGOUT_SUCCESS));
         } else {
-            return ResponseEntity.badRequest().body("이미 로그아웃 상태입니다.");
+            throw new CustomException(ResponseStatus.ALREADY_LOGGED_OUT);
         }
     }
 
     // 중복 닉네임 체크
     @GetMapping("/check-nickname")
-    public ResponseEntity<String> checkNickname(@RequestParam String nickname) {
+    public ResponseEntity<ApiResponse> checkNickname(@RequestParam String nickname) {
         userService.isNicknameTaken(nickname);
-        return ResponseEntity.ok("사용 가능한 닉네임입니다.");
+        return ResponseEntity
+                .status(ResponseStatus.NICKNAME_AVAILABLE.getStatus())
+                .body(ApiResponse.of(ResponseStatus.NICKNAME_AVAILABLE));
     }
 }
