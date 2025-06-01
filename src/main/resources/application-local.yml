@@ -22,6 +22,12 @@ spring:
   sql:
     init:
       mode: never
+
+logging:
+  level:
+    root: INFO
+    com.chatting.capstone: DEBUG
+
 api:
   clova:
     base-url: ${CLOVA_URL}
