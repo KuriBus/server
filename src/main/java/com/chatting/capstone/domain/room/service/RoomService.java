@@ -1,6 +1,6 @@
 package com.chatting.capstone.domain.room.service;
 
-import com.chatting.capstone.domain.location.service.UserLocationService;
+import com.chatting.capstone.domain.location.service.CoordinateService;
 import com.chatting.capstone.domain.room.dto.response.RoomResponse;
 import com.chatting.capstone.domain.room.entity.Room;
 import com.chatting.capstone.domain.room.repository.RoomRepository;
@@ -21,7 +21,7 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
-    private final UserLocationService userLocationService;
+    private final CoordinateService coordinateService;
 
     // 방 목록 조회
     public List<RoomResponse> getAllRooms() {
@@ -64,7 +64,7 @@ public class RoomService {
         int centerY = targetRoom.getHeight() / 2;
 
         // 6. Redis에 초기 위치 정보 저장/갱신
-        userLocationService.setUserLocation(nickname, targetRoom.getRoomName(), centerX, centerY);
+        coordinateService.setUserLocation(nickname, targetRoom.getRoomName(), centerX, centerY);
     }
 
     // 방 퇴장
@@ -89,6 +89,6 @@ public class RoomService {
         userRepository.save(user);
 
         // 5. Redis에서 사용자 위치 정보 삭제
-        userLocationService.deleteUserLocation(nickname);
+        coordinateService.deleteUserLocation(nickname);
     }
 }
