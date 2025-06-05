@@ -42,7 +42,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                 "http://localhost:8080",    // 기존 설정 (백엔드와 같은 출처일 경우)
                 "http://localhost:63342",   // 실제 프론트엔드 Origin
                 "http://localhost:5173",    // 프론트엔드 로컬호스트
-                "http://localhost:5500",    // 프론트엔드 로컬호스트
+                "http://127.0.0.1:5500",    // 프론트엔드 로컬호스트
                 "https://kuriverse.com"     // 도메인 주소 추가
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
