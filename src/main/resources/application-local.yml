@@ -9,7 +9,7 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create # 개발 편의를 위해 create 사용
+      ddl-auto: update # 개발 편의를 위해 create 사용
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
