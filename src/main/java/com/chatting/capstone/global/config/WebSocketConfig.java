@@ -27,6 +27,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws/app")
             .setAllowedOrigins(
                     "http://localhost:63342",
+                    "http://localhost:5500",    // 프론트엔드 로컬호스트
                     "https://kuriverse.com") // CORS 허용 부분 정확히 지정
             .withSockJS(); // SockJS fallback 지원
     }
