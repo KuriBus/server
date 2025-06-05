@@ -61,19 +61,15 @@ public class MovementController {
 
         // "init"이면 기본 위치로 초기화
         if ("init".equals(message.getDirection())) {
-            x = 800;
-            y = 450;
+            x = 20;
+            y = 11;
         } else {
             // 방향 이동 처리
-            int maxX = 799; // 0~799
-            int maxY = 449; // 0~449
-            // 이동 픽셀 설정(현재: 1씩 이동)
             switch (message.getDirection()) {
-                case "w": y = Math.max(0, y - 1); break;
-                case "a": x = Math.max(0, x - 1); break;
-                case "s": y = Math.min(maxY, y + 1); break;
-                case "d": x = Math.min(maxX, x + 1); break;
-                default: throw new CustomException(ResponseStatus.INVALID_POSITION);
+                case "w": y = Math.max(-800, y - 1); break;
+                case "a": x = Math.max(-450, x - 1); break;
+                case "s": y = Math.min(800, y + 1); break;
+                case "d": x = Math.min(450, x + 1); break;
             }
         }
 
