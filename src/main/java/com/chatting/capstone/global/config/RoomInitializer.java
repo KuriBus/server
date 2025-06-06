@@ -16,14 +16,14 @@ public class RoomInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         // 메인 방
-        createRoomIfNotExists("교실");
-        createRoomIfNotExists("공원");
-        createRoomIfNotExists("문화공간");
+        createRoomIfNotExists("교실"); // room_id: 1
+        createRoomIfNotExists("공원"); // room_id: 2
+        createRoomIfNotExists("문화공간"); // room_id: 3
 
         // 통로 방
-        createRoomIfNotExists("통로 1");
-        createRoomIfNotExists("통로 2");
-        createRoomIfNotExists("통로 3");
+        createRoomIfNotExists("통로 1"); // room_id: 4
+        createRoomIfNotExists("통로 2"); // room_id: 5
+        createRoomIfNotExists("통로 3"); // room_id: 6
     }
 
     private void createRoomIfNotExists(String roomName) {
