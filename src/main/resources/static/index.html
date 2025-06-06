@@ -120,7 +120,7 @@
   const GRID_W = 40, GRID_H = 40, MAX_X = 39, MAX_Y = 21;
   const CENTER_X = Math.floor(MAX_X / 2);
   const CENTER_Y = Math.floor(MAX_Y / 2);
-  const allZones = ["Room 1","Bridge 1","Room 2","Bridge 2","Room 3","Bridge 3"];
+  const allZones = ["교실","통로 1","공원","통로 2","문화공간","통로 3"];
   const portalPositions = {};
   allZones.forEach(zone => {
     portalPositions[zone] = [
@@ -129,12 +129,12 @@
     ];
   });
   const zoneIdMap = {
-    "Room 1": 1,
-    "Room 2": 2,
-    "Room 3": 3,
-    "Bridge 1": 4,
-    "Bridge 2": 5,
-    "Bridge 3": 6
+    "교실": 1,
+    "공원": 2,
+    "문화공간": 3,
+    "통로 1": 4,
+    "통로 2": 5,
+    "통로 3": 6
   };
 
   document.getElementById('startBtn').onclick = async function() {
