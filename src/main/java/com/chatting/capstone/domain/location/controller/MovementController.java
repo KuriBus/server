@@ -30,7 +30,7 @@ public class MovementController {
     private final RoomRepository roomRepository;
 
     private static final List<String> PATH = Arrays.asList(
-        "교실", "공원", "문화공간", "통로 1", "통로 2", "통로 3"
+        "교실", "통로 1", "공원", "통로 2", "문화공간", "통로 3" //방 수정
     );
 
     @MessageMapping("/move")
