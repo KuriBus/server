@@ -6,6 +6,8 @@ import com.chatting.capstone.domain.customization.entity.Customization;
 import com.chatting.capstone.domain.customization.repository.CustomizationRepository;
 import com.chatting.capstone.domain.user.entity.User;
 import com.chatting.capstone.domain.user.repository.UserRepository;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -43,4 +45,12 @@ public class CustomizationService {
         System.out.println("Broadcasting customization update: " + response);
         messagingTemplate.convertAndSend("/topic/customization", response);
     }
+    public List<CustomizationResponse> getAllCustomizations() {
+        List<Customization> customizations = customizationRepository.findAll();
+
+        return customizations.stream()
+            .map(c -> new CustomizationResponse(c.getNickname(), c.getBodyType()))
+            .collect(Collectors.toList());
+    }
+
 }
