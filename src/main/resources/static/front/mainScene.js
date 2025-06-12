@@ -71,7 +71,7 @@ class MainScene extends Phaser.Scene {
     const titleText = this.currentRoomName || '알 수 없는 곳';
     this.add.rectangle(800, 50, 300, 60, 0xB593CC).setDepth(5).setStrokeStyle(2, 0xffffff);
     this.add.text(800, 50, titleText, { fontSize: '32px', fontFamily: 'Pretendard', color: '#ffffff' }).setOrigin(0.5).setDepth(6);
-    this.add.rectangle(300, 750, 580, 220, 0x000000, 0.4).setDepth(2);
+    this.add.rectangle(300, 750, 580, 200, 0x000000, 0.4).setDepth(2);
 
     // 채팅 로그 DOM
     this.chatLogContainer = this.add.dom(300, 730).createFromHTML(`
@@ -148,11 +148,6 @@ class MainScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(800, 650, this.character).setDisplaySize(100, 120).setCollideWorldBounds(true).setOrigin(0.5);
     this.nicknameBg = this.add.rectangle(this.player.x, this.player.y + 78, 100, 22, 0x000000, 0.4).setOrigin(0.5).setDepth(5);
     this.nicknameText = this.add.text(this.player.x, this.player.y + 78, this.nickname, { font: '14px Pretendard', fill: '#ffffff' }).setOrigin(0.5).setDepth(6);
-
-    const textWidth = this.nicknameText.width;
-    this.nicknameBg = this.add.rectangle(this.player.x, this.player.y + 78, textWidth + 20, 22, 0x000000, 0.4)
-    .setOrigin(0.5)
-    .setDepth(5);
 
     // 포털 이동키
     this.eKey = this.input.keyboard.addKey('E');
@@ -280,7 +275,6 @@ class MainScene extends Phaser.Scene {
           const otherSprite = this.physics.add.sprite(targetX, targetY, charKey).setDisplaySize(100, 120);
           const nicknameBg = this.add.rectangle(targetX, targetY + 78, 100, 22, 0x000000, 0.4).setOrigin(0.5).setDepth(5);
           const nicknameText = this.add.text(targetX, targetY + 78, pos.nickname, { font: '14px Pretendard', fill: '#ffffff' }).setOrigin(0.5).setDepth(6);
-          const bg = this.add.rectangle(targetX, targetY + 78, text.width + 20, 22, 0x000000, 0.4).setOrigin(0.5).setDepth(5);
           this.otherPlayers.set(pos.nickname, { sprite: otherSprite, nicknameBg, nicknameText, chatBubble: null });
         } else {
           const playerObj = this.otherPlayers.get(pos.nickname);
@@ -337,27 +331,14 @@ class MainScene extends Phaser.Scene {
       this.otherPlayers.get(nickname).chatBubble = null;
     }
 
-    const padding = 10;
-    const maxWidth = 220;
+    const bubbleWidth = 220;
+    const bubbleHeight = 90;
     const tailSize = 12;
 
-    // 텍스트 객체 먼저 생성하여 크기 계산
-    const msgText = this.add.text(0, 0, message, {
-      font: '14px Pretendard',
-      color: '#000000',
-      wordWrap: { width: maxWidth - padding * 2 }
-    }).setOrigin(0.5);
-
-    const textBounds = msgText.getBounds();
-    const bubbleWidth = textBounds.width + padding * 2;
-    const bubbleHeight = textBounds.height + padding * 2;
-
-    // 말풍선 박스
     const bubbleRect = this.add.graphics();
     bubbleRect.fillStyle(0xffffff, 1);
     bubbleRect.fillRoundedRect(0, 0, bubbleWidth, bubbleHeight, 10);
 
-    // 꼬리
     const tail = this.add.graphics();
     tail.fillStyle(0xffffff, 1);
     tail.beginPath();
@@ -367,20 +348,18 @@ class MainScene extends Phaser.Scene {
     tail.closePath();
     tail.fillPath();
 
-    // 텍스트 위치 설정
-    msgText.setPosition(bubbleWidth / 2, bubbleHeight / 2);
+    const msgText = this.add.text(bubbleWidth / 2, bubbleHeight / 2, message, {
+      font: '14px Pretendard',
+      color: '#000000',
+      align: 'center',
+      wordWrap: { width: bubbleWidth - 20 }
+    }).setOrigin(0.5);
 
-    // 말풍선 컨테이너
-    const verticalOffset = 120 + 22 + 5;
     const bubble = this.add.container(
-        targetSprite.x - bubbleWidth / 2,
-        targetSprite.y - verticalOffset - bubbleHeight - tailSize,
-        [bubbleRect, tail, msgText]
+      targetSprite.x - bubbleWidth / 2,
+      targetSprite.y - 150,
+      [bubbleRect, tail, msgText]
     ).setDepth(6);
-
-    // 말풍선 높이 저장 (update에서 사용할 수 있도록)
-    bubble._bubbleHeight = bubbleHeight + tailSize + 10;
-    bubble._bubbleWidth = bubbleWidth;
 
     this.time.delayedCall(3000, () => {
       bubble.destroy();
@@ -390,9 +369,8 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    if (isMe) {
-      this.activeBubble = bubble;
-    } else if (nickname && this.otherPlayers.get(nickname)) {
+    if (isMe) this.activeBubble = bubble;
+    else if (nickname && this.otherPlayers.get(nickname)) {
       this.otherPlayers.get(nickname).chatBubble = bubble;
     }
   }
@@ -421,29 +399,18 @@ class MainScene extends Phaser.Scene {
       this.activePortal = portal.getData('target');
     }, null, this);
 
-    if (this.activeBubble) {
-      const h = this.activeBubble._bubbleHeight || 90;
-      const w = this.activeBubble._bubbleWidth || 220;
-      const verticalOffset = 50;
-      this.activeBubble.setPosition(this.player.x - w / 2, this.player.y - verticalOffset - h + 10);
-    }
+    if (this.activeBubble) this.activeBubble.setPosition(this.player.x - 110, this.player.y - 150);
 
     if (this.nicknameText && this.nicknameBg) {
       this.nicknameText.setPosition(this.player.x, this.player.y + 78);
       this.nicknameBg.setPosition(this.player.x, this.player.y + 78);
-      this.nicknameBg.width = this.nicknameText.width + 20; // 폭 재조정
     }
 
     this.otherPlayers.forEach(playerObj => {
       const { sprite, nicknameBg, nicknameText, chatBubble } = playerObj;
       nicknameBg.setPosition(sprite.x, sprite.y + 78);
       nicknameText.setPosition(sprite.x, sprite.y + 78);
-      if (chatBubble) {
-        const h = chatBubble._bubbleHeight || 90;
-        const w = chatBubble._bubbleWidth || 220;
-        const verticalOffset = 50;
-        chatBubble.setPosition(sprite.x - w / 2, sprite.y - verticalOffset - h + 10);
-      }
+      if (chatBubble) chatBubble.setPosition(sprite.x - 110, sprite.y - 150);
     });
 
     if (this.activePortal && Phaser.Input.Keyboard.JustDown(this.eKey)) {
