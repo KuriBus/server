@@ -164,30 +164,19 @@ class MainScene extends Phaser.Scene {
 
     this.initWebSocket(this.roomId, this.nickname);
 
-    // NPC 자동 생성 타이머
-    this.time.addEvent({
-      delay: 3000, // 3초마다 한 명씩 생성
-      loop: true,
-      callback: () => {
-        const characterList = ['boy1', 'boy2', 'boy3', 'girl1', 'girl2', 'girl3'];
-        const key = Phaser.Utils.Array.GetRandom(characterList);
+    const characterList = ['boy1', 'boy2', 'boy3', 'girl1', 'girl2', 'girl3'];
+    const npcCount = Phaser.Math.Between(5, 6);
 
-        const fromLeft = Math.random() < 0.5;
-        const startX = fromLeft ? -50 : 1650;
-        const endX = fromLeft ? 1650 : -50;
-        const y = Phaser.Math.Between(300, 700);
+    for (let i = 0; i < npcCount; i++) {
+      const key = Phaser.Utils.Array.GetRandom(characterList);
+      const x = Phaser.Math.Between(100, 1500);
+      const y = Phaser.Math.Between(300, 880);
 
-        const npc = this.add.sprite(startX, y, key).setDisplaySize(100, 120).setDepth(1);
-        npc.setFlipX(!fromLeft); // 오른쪽 이동 시 반전
-
-        this.tweens.add({
-          targets: npc,
-          x: endX,
-          duration: Phaser.Math.Between(6000, 10000),
-          onComplete: () => npc.destroy()
-        });
-      }
-    });
+      const npc = this.add.sprite(x, y, key)
+      .setDisplaySize(100, 120)
+      .setDepth(1);
+      npc.setFlipX(Math.random() < 0.5); // 랜덤 방향
+    }
   }
 
   async joinRoom(roomId, nickname) {
