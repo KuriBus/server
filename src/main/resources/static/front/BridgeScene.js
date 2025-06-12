@@ -169,6 +169,8 @@ class BridgeScene extends Phaser.Scene {
         this.leaveRoom(this.roomId, this.nickname);
         stompClient.deactivate();
       }
+      // 로그아웃 API 호출
+      navigator.sendBeacon('/api/users/logout');
     });
 
     this.initWebSocket(this.roomId, this.nickname);

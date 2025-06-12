@@ -44,7 +44,7 @@ class NicknameScene extends Phaser.Scene {
 
       } catch (error) {
         console.error("로그인 오류:", error);
-        alert("로그인 실패: 닉네임을 다시 확인해주세요.");
+        alert("로그인 실패: 닉네임이 중복되었습니다.");
       }
     };
 
