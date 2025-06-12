@@ -61,8 +61,8 @@ public class MovementController {
 
         // "init"이면 기본 위치로 초기화
         if ("init".equals(message.getDirection())) {
-            x = 20;
-            y = 11;
+            x = 50;
+            y = 40;
         } else {
             // 방향 이동 처리
             switch (message.getDirection()) {
