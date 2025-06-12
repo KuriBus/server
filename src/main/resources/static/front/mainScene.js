@@ -248,6 +248,10 @@ class MainScene extends Phaser.Scene {
   setupSubscriptions() {
     const bodytypeToCharacter = { 1: 'boy1', 2: 'boy2', 3: 'boy3', 4: 'girl1', 5: 'girl2', 6: 'girl3' };
 
+    if (this.chatSub) this.chatSub.unsubscribe();
+    if (this.positionsSub) this.positionsSub.unsubscribe();
+    if (this.customizationSub) this.customizationSub.unsubscribe();
+
     this.customizationSub = stompClient.subscribe('/topic/customization', (message) => {
       const data = JSON.parse(message.body);
       const bodytype = data.bodytype || data.bodyType;
