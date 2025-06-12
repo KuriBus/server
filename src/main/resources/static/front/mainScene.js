@@ -304,14 +304,14 @@ class MainScene extends Phaser.Scene {
       });
     });
 
-    // this.stompClient.subscribe(`/queue/warnings/${this.nickname}`, (msg) => {
-    //   this.addChatLog(`[⚠️ 경고] ${msg.body}`);
-    // });
+    stompClient.subscribe(`/queue/warnings/${this.nickname}`, (msg) => {
+      this.addChatLog(`[⚠️ 경고] ${msg.body}`);
+    });
 
-    // // 에러 메시지 구독 추가
-    // this.stompClient.subscribe(`/queue/errors/${this.nickname}`, (msg) => {
-    //   this.addChatLog(`[❌ 에러] ${msg.body}`);
-    // });
+    // 에러 메시지 구독 추가
+    stompClient.subscribe(`/queue/errors/${this.nickname}`, (msg) => {
+      this.addChatLog(`[❌ 에러] ${msg.body}`);
+    });
 
     // 채팅 메시지 구독
     this.chatSub = stompClient.subscribe(`/topic/room/${this.roomId}`, (msg) => {
