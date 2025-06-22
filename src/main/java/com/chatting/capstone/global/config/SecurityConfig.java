@@ -29,7 +29,13 @@ public class SecurityConfig implements WebMvcConfigurer {
                 // 3. 경로별 접근 권한 설정
                 .authorizeHttpRequests(authz -> authz
                         // 웹소켓/SockJS 연결 관련 경로는 모두 허용
-                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(
+                                "/ws/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/swagger-resources/**"
+                        ).permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();
