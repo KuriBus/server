@@ -1,10 +1,14 @@
 spring:
   jackson:
     time-zone: Asia/Seoul
+  mvc:
+    path match:
+      matching-strategy: ant_path_matcher
+
   datasource: # AWS RDS
-    url: ${RDS_URL} # 로컬에서는 ssh 터널링 등으로 접근
-    username: ${RDS_USERNAME}
-    password: ${RDS_PASSWORD}
+    url: jdbc:mysql://localhost:3307/capstone # 로컬에서는 ssh 터널링 등으로 접근
+    username: root
+    password: goguses123*
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     show-sql: true
