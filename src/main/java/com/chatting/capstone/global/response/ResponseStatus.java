@@ -27,6 +27,10 @@ public enum ResponseStatus {
 
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
 
+    MESSAGE_TOO_LONG(HttpStatus.LENGTH_REQUIRED, "메세지가 너무 깁니다."),
+
+    MUTED(HttpStatus.BAD_REQUEST, "채팅 금지 상태입니다."),
+    SPAM_DETECTED(HttpStatus.BAD_REQUEST, "도배로 판단되어 제한되었습니다."),
 
     // Success
     LOGIN_SUCCESS(HttpStatus.OK, "로그인에 성공했습니다."),
