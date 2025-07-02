@@ -66,10 +66,10 @@ public class MovementController {
         } else {
             // 방향 이동 처리
             switch (message.getDirection()) {
-                case "w": y = Math.max(-800, y - 1); break;
-                case "a": x = Math.max(-450, x - 1); break;
-                case "s": y = Math.min(800, y + 1); break;
-                case "d": x = Math.min(450, x + 1); break;
+                case "w": y = Math.max(0, y - 1); break;
+                case "a": x = Math.max(0, x - 1); break;
+                case "s": y = Math.min(900, y + 1); break;
+                case "d": x = Math.min(1600, x + 1); break;
             }
         }
 
@@ -139,8 +139,8 @@ public class MovementController {
         userRepository.save(user);
 
         // 포탈 이동 시 위치 설정
-        x = "left".equals(message.getPortalDirection()) ? 8 : 1;
-        y = 5;
+        x = "left".equals(message.getPortalDirection()) ? 50 : 1550;
+        y = 450;
 
         // 위치 정보 Redis에 저장 (nickname 기준)
         Map<String, Object> saveValue = new HashMap<>();
