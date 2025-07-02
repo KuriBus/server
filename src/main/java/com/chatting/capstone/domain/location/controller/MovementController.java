@@ -64,7 +64,7 @@ public class MovementController {
             x = 50;
             y = 40;
         } else {
-            // 방향 이동 처리
+            // 방향 이동 처리(0,0) ~ (1600,900)
             switch (message.getDirection()) {
                 case "w": y = Math.max(0, y - 1); break;
                 case "a": x = Math.max(0, x - 1); break;
