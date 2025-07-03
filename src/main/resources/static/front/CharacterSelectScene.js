@@ -1,4 +1,4 @@
-const SERVER_URL = 'https://kuriverse.com'; 
+const SERVER_URL = 'https://kuriverse.shop';
 
 class CharacterSelectScene extends Phaser.Scene {
   constructor() {
