@@ -28,7 +28,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             .setAllowedOrigins(
                     "http://localhost:63342",
                     "http://127.0.0.1:5500",    // 프론트엔드 로컬호스트
-                    "https://kuriverse.com") // CORS 허용 부분 정확히 지정
+                    "https://kuriverse.com", // 프론트엔드 도메인
+                    "https://darling-starlight-f4b806.netlify.app") // 프론트엔드 netlify 도메인
             .withSockJS(); // SockJS fallback 지원
     }
 }
