@@ -32,6 +32,11 @@ public enum ResponseStatus {
     MUTED(HttpStatus.BAD_REQUEST, "채팅 금지 상태입니다."),
     SPAM_DETECTED(HttpStatus.BAD_REQUEST, "도배로 판단되어 제한되었습니다."),
 
+    INVALID_NICKNAME_LENGTH(HttpStatus.BAD_REQUEST, "닉네임은 2~12자 사이여야 합니다."),
+    INVALID_NICKNAME_FORMAT(HttpStatus.BAD_REQUEST, "닉네임은 한글, 영문, 숫자만 사용할 수 있습니다."),
+    PROFANE_NICKNAME(HttpStatus.BAD_REQUEST, "부적절한 닉네임입니다."),
+
+
     // Success
     LOGIN_SUCCESS(HttpStatus.OK, "로그인에 성공했습니다."),
     LOGOUT_SUCCESS(HttpStatus.OK, "로그아웃 되었습니다."),
