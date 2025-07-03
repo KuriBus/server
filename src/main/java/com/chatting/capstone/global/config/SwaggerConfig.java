@@ -27,7 +27,7 @@ public class SwaggerConfig {
         SecurityRequirement securityRequirement = new SecurityRequirement().addList("bearerAuth");
 
         return new OpenAPI()
-            .servers(List.of(new Server().url("https://kuriverse.com")))
+            .servers(List.of(new Server().url("https://kuriverse.shop")))
             .info(info)
             .components(new Components().addSecuritySchemes("bearerAuth", securityScheme))
             .security(Arrays.asList(securityRequirement));
