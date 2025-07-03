@@ -86,9 +86,17 @@ public class ChatService {
             .collect(Collectors.toList());
     }
 
-    public boolean isMuted(String nickname) {
+    //몇초 남았는지 계산
+    public long getMuteRemainingMillis(String nickname) {
         Long until = muteMap.get(nickname);
-        return until != null && System.currentTimeMillis() < until;
+        if (until == null) return 0;
+
+        long now = System.currentTimeMillis();
+        return Math.max(0, until - now);
+    }
+
+    public boolean isMuted(String nickname) {
+        return getMuteRemainingMillis(nickname) > 0;
     }
 
     public void mute(String nickname) {
@@ -143,9 +151,13 @@ public class ChatService {
     public Mono<ChatResponse> processMessage(ChatRequest dto, String nickname) {
 
         if (isMuted(nickname)) {
+            long remainingMillis = getMuteRemainingMillis(nickname);
+            long secondsLeft = Math.max(1, remainingMillis / 1000); // 최소 1초 보장
+
             messagingTemplate.convertAndSend("/queue/warnings/" + nickname,
-                "⛔ 현재 도배로 인해 채팅이 30초간 정지되었습니다.");
-            throw new CustomException(ResponseStatus.MUTED); // Controller에서 처리
+                "⛔ 현재 도배로 인해 채팅이 제한되었습니다. 남은 시간: " + secondsLeft + "초");
+
+            throw new CustomException(ResponseStatus.MUTED);
         }
 
         if (isSpamming(nickname, dto.getContent())) {
