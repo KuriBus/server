@@ -29,69 +29,30 @@ public class ChatController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final ClovaService clovaService;
-    private final ClovaXClient clovaXClient;
+
 
     // 채팅 전송
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatRequest dto, StompHeaderAccessor accessor) {
         String nickname = dto.getNickname();
-        accessor.getSessionAttributes().put("nickname", nickname); // userId 대신 nickname
+        accessor.getSessionAttributes().put("nickname", nickname);
 
-        processMessage(dto, nickname);
-    }
+        long startTime = System.currentTimeMillis();
 
-    private void processMessage(ChatRequest dto, String nickname) {
-        long startTime = System.currentTimeMillis(); // 전체 처리 시작 시점
-        try {
-            validateMessage(dto.getContent());
-            String originalContent = dto.getContent();
-
-            long appraisalStart = System.currentTimeMillis(); // Clova appraisal 시작
-
-            clovaService.appraiseSentence(originalContent)
-                .flatMap(isInappropriate -> {
-                    long appraisalEnd = System.currentTimeMillis(); // Clova appraisal 종료
-                    log.info("[{}] Clova appraisal duration: {}ms", nickname, appraisalEnd - appraisalStart);
-
-                    if ("1".equals(isInappropriate)) {
-                        messagingTemplate.convertAndSend("/queue/warnings/" + nickname,
-                            "⚠️ 부적절한 표현이 감지되어 자동으로 수정되었습니다.");
-
-                        long clovaXStart = System.currentTimeMillis(); // ClovaX 시작
-
-                        return clovaXClient.filterMessageAsync(originalContent)
-                            .flatMap(filteredContent -> {
-                                long clovaXEnd = System.currentTimeMillis();
-                                long clovaXDuration = clovaXEnd - clovaXStart;
-                                long totalDuration = clovaXEnd - startTime;
-
-                                log.info("[{}] ClovaX filtering duration: {}ms", nickname, clovaXDuration);
-                                log.info("[{}] Total time until message sent: {}ms", nickname, totalDuration);
-
-                                ChatResponse response = chatService.save(dto, filteredContent);
-                                return Mono.just(response);
-                            });
-                    } else {
-                        long totalEnd = System.currentTimeMillis();
-                        log.info("[{}] No filtering needed. Total time until message sent: {}ms", nickname, totalEnd - startTime);
-                        return Mono.just(chatService.save(dto, originalContent));
-                    }
-                })
-                .doOnSuccess(chatResponse -> sendWithDelay(dto.getRoomId(), chatResponse, startTime))
-                .doOnError(e -> {
-                    log.error("채팅 처리 중 비동기 예외 발생: {}", e.getMessage(), e);
-                    sendErrorToUser(nickname, "채팅 전송 중 오류가 발생했습니다.");
-                })
-                .subscribe();
-
-        } catch (IllegalArgumentException e) {
-            log.error("빈 메시지 수신: {}", e.getMessage());
-            sendErrorToUser(nickname, "메시지 전송 실패: " + e.getMessage());
-        } catch (Exception e) {
-            log.error("채팅 전송 중 예외 발생: {}", e.getMessage(), e);
-            sendErrorToUser(nickname, "채팅 전송 중 오류가 발생했습니다.");
-        }
+        chatService.processMessage(dto, nickname)
+            .doOnSuccess(response -> sendWithDelay(dto.getRoomId(), response, startTime))
+            .doOnError(e -> {
+                log.error("채팅 처리 중 에러: {}", e.getMessage());
+                String errMsg = switch (e instanceof CustomException ce ? ce.getResponseStatus() : ResponseStatus.SERVER_ERROR) {
+                    case MUTED -> "⛔ 현재 도배로 인해 채팅이 30초간 정지되었습니다.";
+                    case SPAM_DETECTED -> "⚠️ 도배로 판단되어 채팅이 30초간 제한됩니다.";
+                    case INVALID_MESSAGE -> "메시지가 비어 있습니다.";
+                    case MESSAGE_TOO_LONG -> "메시지가 너무 깁니다. 30자 이하로 작성해주세요.";
+                    default -> "채팅 전송 중 오류가 발생했습니다.";
+                };
+                sendErrorToUser(nickname, errMsg);
+            })
+            .subscribe();
     }
 
     private void sendWithDelay(Long roomId, ChatResponse chatResponse, long startTime) {
@@ -111,13 +72,6 @@ public class ChatController {
     //사용자에게 에러 메세지 전송
     private void sendErrorToUser(String nickname, String errorMessage) {
         messagingTemplate.convertAndSend("/queue/errors/" + nickname, errorMessage);
-    }
-
-    // 메시지 유효성 검사
-    private void validateMessage(String content) {
-        if (content == null || content.trim().isEmpty()) {
-            throw new CustomException(ResponseStatus.INVALID_MESSAGE);
-        }
     }
 
     // 채팅 기록 조회
