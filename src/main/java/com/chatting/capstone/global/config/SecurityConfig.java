@@ -50,6 +50,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                 "http://localhost:5173",    // 프론트엔드 로컬호스트
                 "http://127.0.0.1:5500",    // 프론트엔드 로컬호스트
                 "https://kuriverse.com",     // 프론트엔드 도메인
+                "https://kuriverse.shop",
                 "https://darling-starlight-f4b806.netlify.app" // 프론트엔드 netlify 도메인
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
