@@ -1,6 +1,6 @@
 import { stompClient } from './game.js';
 
-const SERVER_URL = 'https://kuriverse.com';
+const SERVER_URL = 'https://kuriverse.shop';
 
 class MainScene extends Phaser.Scene {
   constructor() {
