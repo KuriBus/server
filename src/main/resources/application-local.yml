@@ -41,3 +41,6 @@ api:
   perplexity:
     url: https://api.perplexity.ai
     key: ${PERPLEXITY_KEY}
+
+jwt:
+  secret: your-very-secret-key-that-should-be-long-and-random

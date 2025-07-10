@@ -36,6 +36,11 @@ public enum ResponseStatus {
     INVALID_NICKNAME_FORMAT(HttpStatus.BAD_REQUEST, "닉네임은 한글, 영문, 숫자만 사용할 수 있습니다."),
     PROFANE_NICKNAME(HttpStatus.BAD_REQUEST, "부적절한 닉네임입니다."),
 
+    SIGNUP_SUCCESS(HttpStatus.OK, "회원가입 성공"),
+    DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST, "이미 사용 중인 아이디입니다."),
+    DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다."),
+    LOGIN_FAILED(HttpStatus.BAD_REQUEST, "아이디 또는 비밀번호가 올바르지 않습니다."),
+
 
     // Success
     LOGIN_SUCCESS(HttpStatus.OK, "로그인에 성공했습니다."),
