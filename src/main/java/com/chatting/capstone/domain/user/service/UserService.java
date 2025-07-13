@@ -33,7 +33,7 @@ public class UserService {
     @Transactional
     public void signup(String username, String rawPassword, String nickname, String ipAddress) {
         if (userRepository.existsByUsername(username)) {
-            throw new CustomException(ResponseStatus.DUPLICATE_USERNAME);
+            throw new CustomException(ResponseStatus.USERNAME_TAKEN);
         }
         if (userRepository.existsByNickname(nickname)) {
             throw new CustomException(ResponseStatus.NICKNAME_TAKEN);

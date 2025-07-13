@@ -10,7 +10,8 @@ public enum ResponseStatus {
     // Error
     NICKNAME_ALREADY_LOGGED_IN(HttpStatus.CONFLICT, "이미 로그인 중인 닉네임입니다."),
     ALREADY_LOGGED_OUT(HttpStatus.BAD_REQUEST, "이미 로그아웃 상태입니다."),
-    NICKNAME_TAKEN(HttpStatus.CONFLICT, "사용중인 닉네임입니다."),
+    NICKNAME_TAKEN(HttpStatus.CONFLICT, "이미 사용중인 닉네임입니다."),
+    USERNAME_TAKEN(HttpStatus.BAD_REQUEST, "이미 사용 중인 아이디입니다."),
     USER_ALREADY_LOGGED_IN(HttpStatus.CONFLICT, "이미 로그인한 유저입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 유저를 찾을 수 없습니다."),
     NICKNAME_REQUIRED(HttpStatus.BAD_REQUEST, "닉네임을 입력해주세요."),
@@ -37,8 +38,6 @@ public enum ResponseStatus {
     PROFANE_NICKNAME(HttpStatus.BAD_REQUEST, "부적절한 닉네임입니다."),
 
     SIGNUP_SUCCESS(HttpStatus.OK, "회원가입 성공"),
-    DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST, "이미 사용 중인 아이디입니다."),
-    DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다."),
     LOGIN_FAILED(HttpStatus.BAD_REQUEST, "아이디 또는 비밀번호가 올바르지 않습니다."),
 
 
