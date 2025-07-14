@@ -2,15 +2,19 @@ package com.chatting.capstone.domain.user.controller;
 
 import com.chatting.capstone.domain.user.dto.request.SignupRequest;
 import com.chatting.capstone.domain.user.dto.response.LoginResponse;
+import com.chatting.capstone.domain.user.dto.response.TokenResponse;
 import com.chatting.capstone.domain.user.entity.User;
+import com.chatting.capstone.domain.user.service.AuthService;
 import com.chatting.capstone.domain.user.service.UserService;
-import com.chatting.capstone.global.config.JwtUtil;
 import com.chatting.capstone.global.response.ApiResponse;
 import com.chatting.capstone.global.response.CustomException;
 import com.chatting.capstone.global.response.ResponseStatus;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
-    private final JwtUtil jwtUtil;
+    private final AuthService authService;
 
     //회원가입
     @PostMapping("/signup")
@@ -38,12 +42,21 @@ public class UserController {
     }
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@RequestBody SignupRequest request) {
-        User user = userService.login(request.getUsername(), request.getPassword());
-        String token = jwtUtil.generateToken(user);
+    public ResponseEntity<ApiResponse> login(@RequestBody SignupRequest request, HttpServletResponse response) {
+        LoginResponse loginResponse = authService.login(request.getUsername(), request.getPassword());
 
-        return ResponseEntity.ok(ApiResponse.of(ResponseStatus.LOGIN_SUCCESS,
-            new LoginResponse(token, user.getNickname())));
+        // refreshToken을 HttpOnly 쿠키로 설정
+        Cookie refreshCookie = new Cookie("refreshToken", loginResponse.getRefreshToken());
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(true); // HTTPS 환경에서만 사용 local 사용시 false로
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 14일
+
+        response.addCookie(refreshCookie);
+        // accessToken만 ResponseBody로 내려주기 (refreshToken은 쿠키로만 전달)
+        LoginResponse body = new LoginResponse(loginResponse.getAccessToken(), null, loginResponse.getNickname());
+
+        return ResponseEntity.ok(ApiResponse.of(ResponseStatus.LOGIN_SUCCESS, body));
     }
 
     // 로그아웃
@@ -51,7 +64,7 @@ public class UserController {
     public ResponseEntity<ApiResponse> logout(HttpSession session) {
         User user = (User) session.getAttribute("user");
         if (user != null) {
-            userService.logout(user);
+            authService.logout(user);
             session.invalidate();
             return ResponseEntity
                     .status(ResponseStatus.LOGOUT_SUCCESS.getStatus())
@@ -80,5 +93,27 @@ public class UserController {
             ip = ip.split(",")[0];
         }
         return ip;
+    }
+
+    //토큰 추출 및 재발급
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse> refresh(HttpServletRequest request) {
+        String refreshToken = null;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                }
+            }
+        }
+
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.of(ResponseStatus.INVALID_REFRESH_TOKEN, null));
+        }
+
+        TokenResponse tokenResponse = authService.reissueToken(refreshToken);
+        return ResponseEntity.ok(ApiResponse.of(ResponseStatus.REFRESH_TOKEN_COOKIE_SUCCESS, tokenResponse));
     }
 }

@@ -40,6 +40,9 @@ public enum ResponseStatus {
     SIGNUP_SUCCESS(HttpStatus.OK, "회원가입 성공"),
     LOGIN_FAILED(HttpStatus.BAD_REQUEST, "아이디 또는 비밀번호가 올바르지 않습니다."),
 
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
+    REFRESH_TOKEN_MISMATCH(HttpStatus.UNAUTHORIZED, "토큰 정보가 일치하지 않습니다."),
+
 
     // Success
     LOGIN_SUCCESS(HttpStatus.OK, "로그인에 성공했습니다."),
@@ -54,7 +57,11 @@ public enum ResponseStatus {
     MOVE_SUCCESS(HttpStatus.OK, "이동 성공"),
     COORDINATE_SUCCESS(HttpStatus.OK, "좌표 정보를 성공적으로 조회했습니다."),
 
-    CUSTOMIZATION_UPDATE_SUCCESS(HttpStatus.OK, "커스터마이징이 성공적으로 업데이트되었습니다.");
+    CUSTOMIZATION_UPDATE_SUCCESS(HttpStatus.OK, "커스터마이징이 성공적으로 업데이트되었습니다."),
+
+    REFRESH_TOKEN_COOKIE_SUCCESS(HttpStatus.OK, "토큰 추출이 성공했습니다."),
+
+    TOKEN_REISSUE_SUCCESS(HttpStatus.OK, "토큰이 재발급 되었습니다.");
 
     private final HttpStatus status;
     private final String message;
