@@ -33,7 +33,7 @@ public enum ResponseStatus {
     MUTED(HttpStatus.BAD_REQUEST, "채팅 금지 상태입니다."),
     SPAM_DETECTED(HttpStatus.BAD_REQUEST, "도배로 판단되어 제한되었습니다."),
 
-    INVALID_NICKNAME_LENGTH(HttpStatus.BAD_REQUEST, "닉네임은 2~12자 사이여야 합니다."),
+    INVALID_NICKNAME_LENGTH(HttpStatus.BAD_REQUEST, "닉네임은 2~8자 사이여야 합니다."),
     INVALID_NICKNAME_FORMAT(HttpStatus.BAD_REQUEST, "닉네임은 한글, 영문, 숫자만 사용할 수 있습니다."),
     PROFANE_NICKNAME(HttpStatus.BAD_REQUEST, "부적절한 닉네임입니다."),
 
@@ -42,6 +42,9 @@ public enum ResponseStatus {
 
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
     REFRESH_TOKEN_MISMATCH(HttpStatus.UNAUTHORIZED, "토큰 정보가 일치하지 않습니다."),
+    INVALID_USERNAME_FORMAT(HttpStatus.BAD_REQUEST, "올바르지 않은 아이디 형식입니다."),
+    INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "올바르지 않은 비밀번호 형식입니다."),
+    PASSWORD_TOO_SIMILAR_TO_USERNAME(HttpStatus.BAD_REQUEST,"비밀번호가 아이디와 너무 유사합니다."),
 
 
     // Success

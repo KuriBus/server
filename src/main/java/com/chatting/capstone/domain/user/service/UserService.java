@@ -18,10 +18,16 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     private static final int MIN_NICKNAME_LENGTH = 2;
-    private static final int MAX_NICKNAME_LENGTH = 6;
+    private static final int MAX_NICKNAME_LENGTH = 8;
 
     // 허용 문자: 한글, 영어, 숫자만 (공백, 특수문자 금지) 빈문자 허용X
     private static final String NICKNAME_PATTERN = "^[가-힣a-zA-Z0-9]+$";
+    // 아이디 패턴
+    private static final String USERNAME_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{4,16}$";
+    // 비밀번호 패턴
+    private static final String PASSWORD_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,16}$";
+    //아이디 비밀번호 4글자 이상 같은 문자 허용 X
+    private static final int MIN_CONSECUTIVE_SAME_LENGTH = 4;
 
     // 예시 금지 단어 목록 (더 많은 욕설 포함 가능)
     // 추후에 욕설이 들어간다면 ai 모델로 검사하는 것은 어떠한지
@@ -39,6 +45,9 @@ public class UserService {
             throw new CustomException(ResponseStatus.NICKNAME_TAKEN);
         }
 
+        validateUsername(username);
+        validatePassword(rawPassword);
+        validatePasswordNotSimilarToUsername(username, rawPassword);
         validateNickname(nickname);
         String encodedPassword = passwordEncoder.encode(rawPassword);
 
@@ -98,6 +107,32 @@ public class UserService {
         for (String banned : BANNED_WORDS) {
             if (nickname.toLowerCase().contains(banned)) {
                 throw new CustomException(ResponseStatus.PROFANE_NICKNAME);
+            }
+        }
+    }
+
+    private void validateUsername(String username) {
+        if (!username.matches(USERNAME_PATTERN)) {
+            throw new CustomException(ResponseStatus.INVALID_USERNAME_FORMAT);
+        }
+    }
+
+    private void validatePassword(String password) {
+        if (!password.matches(PASSWORD_PATTERN)) {
+            throw new CustomException(ResponseStatus.INVALID_PASSWORD_FORMAT);
+        }
+    }
+
+    private void validatePasswordNotSimilarToUsername(String username, String password) {
+        // username과 password에서 연속으로 MIN_CONSECUTIVE_SAME_LENGTH 이상 겹치는 부분이 있는지 검사
+        int maxCheckLength = Math.min(username.length(), password.length());
+
+        for (int length = MIN_CONSECUTIVE_SAME_LENGTH; length <= maxCheckLength; length++) {
+            for (int i = 0; i <= username.length() - length; i++) {
+                String sub = username.substring(i, i + length);
+                if (password.contains(sub)) {
+                    throw new CustomException(ResponseStatus.PASSWORD_TOO_SIMILAR_TO_USERNAME);
+                }
             }
         }
     }

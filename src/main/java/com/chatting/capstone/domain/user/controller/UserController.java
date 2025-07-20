@@ -1,5 +1,6 @@
 package com.chatting.capstone.domain.user.controller;
 
+import com.chatting.capstone.domain.user.dto.request.LoginRequest;
 import com.chatting.capstone.domain.user.dto.request.SignupRequest;
 import com.chatting.capstone.domain.user.dto.response.LoginResponse;
 import com.chatting.capstone.domain.user.dto.response.TokenResponse;
@@ -9,6 +10,7 @@ import com.chatting.capstone.domain.user.service.UserService;
 import com.chatting.capstone.global.response.ApiResponse;
 import com.chatting.capstone.global.response.CustomException;
 import com.chatting.capstone.global.response.ResponseStatus;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,19 +44,24 @@ public class UserController {
     }
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@RequestBody SignupRequest request, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
         LoginResponse loginResponse = authService.login(request.getUsername(), request.getPassword());
 
         // refreshToken을 HttpOnly 쿠키로 설정
         Cookie refreshCookie = new Cookie("refreshToken", loginResponse.getRefreshToken());
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true); // HTTPS 환경에서만 사용 local 사용시 false로
+        refreshCookie.setSecure(false); // HTTPS 환경에서만 사용 local 사용시 false로
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 14일
 
         response.addCookie(refreshCookie);
         // accessToken만 ResponseBody로 내려주기 (refreshToken은 쿠키로만 전달)
-        LoginResponse body = new LoginResponse(loginResponse.getAccessToken(), null, loginResponse.getNickname());
+        LoginResponse body = new LoginResponse(
+            loginResponse.getAccessToken(),
+            null,
+            loginResponse.getUsername(),
+            loginResponse.getNickname()
+        );
 
         return ResponseEntity.ok(ApiResponse.of(ResponseStatus.LOGIN_SUCCESS, body));
     }

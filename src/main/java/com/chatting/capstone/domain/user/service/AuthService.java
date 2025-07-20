@@ -34,7 +34,12 @@ public class AuthService {
             Duration.ofDays(14)
         );
 
-        return new LoginResponse(accessToken, refreshToken, user.getNickname());
+        return new LoginResponse(
+            accessToken,
+            refreshToken,
+            user.getUsername(),
+            user.getNickname()
+        );
     }
 
     public void logout(User user) {
@@ -61,6 +66,6 @@ public class AuthService {
 
         String newAccessToken = jwtUtil.generateAccessToken(user);
 
-        return new TokenResponse(newAccessToken, refreshToken);
+        return new TokenResponse(newAccessToken);
     }
 }
