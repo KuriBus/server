@@ -11,6 +11,7 @@ import com.chatting.capstone.global.response.ApiResponse;
 import com.chatting.capstone.global.response.CustomException;
 import com.chatting.capstone.global.response.ResponseStatus;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,6 +35,24 @@ public class UserController {
     private final AuthService authService;
 
     //회원가입
+    @Operation(
+        summary = "회원 가입",
+        description = "새로운 사용자를 등록합니다.",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "가입할 사용자의 정보 (아이디, 비밀번호, 닉네임)",
+            required = true,
+            content = @io.swagger.v3.oas.annotations.media.Content(
+                schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = SignupRequest.class)
+            )
+        ),
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원 가입 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "올바르지 않은 아이디 혹은 비밀번호 형식"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "권한이 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "사용중인 아이디"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
+        }
+    )
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest request, HttpServletRequest httpRequest) {
         String ipAddress = extractClientIp(httpRequest);
@@ -43,6 +62,22 @@ public class UserController {
             .body(ApiResponse.of(ResponseStatus.SIGNUP_SUCCESS));
     }
     // 로그인
+    @Operation(
+        summary = "로그인",
+        description = "가입자가 로그인하기 위해 사용합니다.",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "로그인할 사용자의 정보 (아이디, 비밀번호)",
+            required = true,
+            content = @io.swagger.v3.oas.annotations.media.Content(
+                schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = LoginRequest.class)
+            )
+        ),
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "권한이 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
+        }
+    )
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
         LoginResponse loginResponse = authService.login(request.getUsername(), request.getPassword());
@@ -50,7 +85,7 @@ public class UserController {
         // refreshToken을 HttpOnly 쿠키로 설정
         Cookie refreshCookie = new Cookie("refreshToken", loginResponse.getRefreshToken());
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(false); // HTTPS 환경에서만 사용 local 사용시 false로
+        refreshCookie.setSecure(true); // HTTPS 환경에서만 사용 local 사용시 false로
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 14일
 
@@ -67,6 +102,15 @@ public class UserController {
     }
 
     // 로그아웃
+    @Operation(
+        summary = "로그아웃",
+        description = "가입자가 로그아웃 하기 위해 사용합니다.",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "권한이 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
+        }
+    )
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse> logout(HttpSession session) {
         User user = (User) session.getAttribute("user");
@@ -74,20 +118,32 @@ public class UserController {
             authService.logout(user);
             session.invalidate();
             return ResponseEntity
-                    .status(ResponseStatus.LOGOUT_SUCCESS.getStatus())
-                    .body(ApiResponse.of(ResponseStatus.LOGOUT_SUCCESS));
+                .status(ResponseStatus.LOGOUT_SUCCESS.getStatus())
+                .body(ApiResponse.of(ResponseStatus.LOGOUT_SUCCESS));
         } else {
             throw new CustomException(ResponseStatus.ALREADY_LOGGED_OUT);
         }
     }
 
     // 중복 닉네임 체크
+    @Operation(
+        summary = "중복 닉네임 체크",
+        description = "닉네임이 중복되는지 확인합니다.",
+        parameters = {
+            @Parameter(name = "nickname", description = "조회활 닉네임", required = true, example = "kuriverse")
+        },
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "닉네임 사용 가능"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "권한이 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
+        }
+    )
     @GetMapping("/check-nickname")
     public ResponseEntity<ApiResponse> checkNickname(@RequestParam String nickname) {
         userService.isNicknameTaken(nickname);
         return ResponseEntity
-                .status(ResponseStatus.NICKNAME_AVAILABLE.getStatus())
-                .body(ApiResponse.of(ResponseStatus.NICKNAME_AVAILABLE));
+            .status(ResponseStatus.NICKNAME_AVAILABLE.getStatus())
+            .body(ApiResponse.of(ResponseStatus.NICKNAME_AVAILABLE));
     }
 
     //ip 추출
@@ -103,6 +159,15 @@ public class UserController {
     }
 
     //토큰 추출 및 재발급
+    @Operation(
+        summary = "토큰 추출 및 재발급",
+        description = "가입자의 토큰을 추출하고 refresh 토큰을 재발급합니다.",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "토큰 재발급 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "권한이 없음 또는 유효하지 않은 토큰"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
+        }
+    )
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse> refresh(HttpServletRequest request) {
         String refreshToken = null;
