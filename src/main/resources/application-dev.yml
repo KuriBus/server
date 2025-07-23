@@ -36,3 +36,6 @@ api:
   perplexity:
     url: https://api.perplexity.ai
     key: ${PERPLEXITY_KEY}
+
+jwt:
+  secret: ${JWT_SECRET_KEY}
