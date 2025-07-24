@@ -27,6 +27,7 @@ services:
       CLOVA_PLAYGROUND_KEY: ${CLOVA_PLAYGROUND_KEY}
       PERPLEXITY_KEY: ${PERPLEXITY_KEY}
       SPRING_PROFILES_ACTIVE: dev # 개발 환경 프로필 활성화
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
 
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
