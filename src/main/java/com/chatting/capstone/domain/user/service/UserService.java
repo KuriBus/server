@@ -18,7 +18,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     private static final int MIN_NICKNAME_LENGTH = 2;
-    private static final int MAX_NICKNAME_LENGTH = 8;
+    private static final int MAX_NICKNAME_LENGTH = 10;
 
     // 허용 문자: 한글, 영어, 숫자만 (공백, 특수문자 금지) 빈문자 허용X
     private static final String NICKNAME_PATTERN = "^[가-힣a-zA-Z0-9]+$";
