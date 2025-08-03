@@ -37,17 +37,6 @@ public class ChatController {
         long startTime = System.currentTimeMillis();
 
         chatService.processMessage(dto, nickname, startTime)
-            .doOnError(e -> {
-                log.error("채팅 처리 중 에러: {}", e.getMessage());
-                String errMsg = switch (e instanceof CustomException ce ? ce.getResponseStatus() : ResponseStatus.SERVER_ERROR) {
-                    case MUTED -> "⛔ 현재 도배로 인해 채팅이 30초간 정지되었습니다.";
-                    case SPAM_DETECTED -> "⚠️ 도배로 판단되어 채팅이 30초간 제한됩니다.";
-                    case INVALID_MESSAGE -> "메시지가 비어 있습니다.";
-                    case MESSAGE_TOO_LONG -> "메시지가 너무 깁니다. 30자 이하로 작성해주세요.";
-                    default -> "채팅 전송 중 오류가 발생했습니다.";
-                };
-                chatService.publishErrorToUser(nickname, errMsg);  // Redis로 에러도 publish
-            })
             .subscribe();
     }
 
