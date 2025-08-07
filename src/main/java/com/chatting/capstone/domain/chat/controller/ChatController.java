@@ -14,7 +14,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,8 +27,6 @@ import com.chatting.capstone.global.response.ResponseStatus;
 public class ChatController {
 
     private final ChatService chatService;
-    private final SimpMessagingTemplate messagingTemplate;
-
 
     // 채팅 전송
     @MessageMapping("/chat.send")
@@ -39,39 +36,8 @@ public class ChatController {
 
         long startTime = System.currentTimeMillis();
 
-        chatService.processMessage(dto, nickname)
-            .doOnSuccess(response -> sendWithDelay(dto.getRoomId(), response, startTime))
-            .doOnError(e -> {
-                log.error("채팅 처리 중 에러: {}", e.getMessage());
-                String errMsg = switch (e instanceof CustomException ce ? ce.getResponseStatus() : ResponseStatus.SERVER_ERROR) {
-                    case MUTED -> "⛔ 현재 도배로 인해 채팅이 30초간 정지되었습니다.";
-                    case SPAM_DETECTED -> "⚠️ 도배로 판단되어 채팅이 30초간 제한됩니다.";
-                    case INVALID_MESSAGE -> "메시지가 비어 있습니다.";
-                    case MESSAGE_TOO_LONG -> "메시지가 너무 깁니다. 30자 이하로 작성해주세요.";
-                    default -> "채팅 전송 중 오류가 발생했습니다.";
-                };
-                sendErrorToUser(nickname, errMsg);
-            })
+        chatService.processMessage(dto, nickname, startTime)
             .subscribe();
-    }
-
-    private void sendWithDelay(Long roomId, ChatResponse chatResponse, long startTime) {
-        long elapsedTime = System.currentTimeMillis() - startTime;
-        long minDelay = 100;
-
-        if (elapsedTime < minDelay) {
-            try {
-                Thread.sleep(minDelay - elapsedTime);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        messagingTemplate.convertAndSend("/topic/room/" + roomId, chatResponse);
-    }
-    //사용자에게 에러 메세지 전송
-    private void sendErrorToUser(String nickname, String errorMessage) {
-        messagingTemplate.convertAndSend("/queue/errors/" + nickname, errorMessage);
     }
 
     // 채팅 기록 조회
@@ -98,7 +64,7 @@ public class ChatController {
 
         if (userId != null) {
             log.error("세션 종료: userId={} 연결 끊김", userId);
-            sendErrorToUser(userId, "연결이 끊어졌습니다. 다시 연결을 시도해주세요.");
+            chatService.publishErrorToUser(userId, "연결이 끊어졌습니다. 다시 연결을 시도해주세요.");
         }
     }
 

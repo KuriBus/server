@@ -49,9 +49,15 @@ public class JwtUtil {
 
     public boolean validateToken(String token) {
         try {
-            parseClaims(token);
+            Claims claims = parseClaims(token);
+            boolean expired = claims.getExpiration().before(new Date());
+            if (expired) {
+                System.out.println("토큰이 만료됨");
+                return false;
+            }
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (Exception e) {
+            System.out.println("토큰 검증 실패: " + e.getMessage());
             return false;
         }
     }
