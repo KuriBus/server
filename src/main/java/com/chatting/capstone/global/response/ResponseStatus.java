@@ -15,6 +15,10 @@ public enum ResponseStatus {
     USER_ALREADY_LOGGED_IN(HttpStatus.CONFLICT, "이미 로그인한 유저입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 유저를 찾을 수 없습니다."),
     NICKNAME_REQUIRED(HttpStatus.BAD_REQUEST, "닉네임을 입력해주세요."),
+    INVALID_USERNAME(HttpStatus.BAD_REQUEST, "부적절한 아이디입니다."),
+    INVALID_NICKNAME(HttpStatus.BAD_REQUEST, "부적절한 닉네임입니다."),
+
+    AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 검열 서비스 이용 불가"),
 
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 방을 찾을 수 없습니다."),
     ALREADY_IN_ROOM(HttpStatus.CONFLICT, "이미 해당 방에 접속 중입니다."),
