@@ -1,3 +1,6 @@
+# Kuriverse 어린이용 AI 채팅 순화 플랫폼
+![Kuriverse메인](https://github.com/user-attachments/assets/87e4d21f-5e2e-48e4-bbb4-33c515bb54a6)
+
 ## ✨ Branch Naming Convention
 
 | 머릿말  | 설명                              |
