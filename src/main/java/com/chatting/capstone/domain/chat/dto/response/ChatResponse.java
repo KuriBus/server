@@ -15,5 +15,6 @@ public class ChatResponse {
     private Long userId;
     private String nickname;
     private String content;
+    private double maliceScore;
     private LocalDateTime createdAt;
 }

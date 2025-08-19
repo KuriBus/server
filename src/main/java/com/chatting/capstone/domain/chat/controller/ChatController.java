@@ -33,11 +33,16 @@ public class ChatController {
     public void sendMessage(@Payload ChatRequest dto, StompHeaderAccessor accessor) {
         String nickname = dto.getNickname();
         accessor.getSessionAttributes().put("nickname", nickname);
-
+        System.out.println("Front에서 온 DTO: " + dto);
         long startTime = System.currentTimeMillis();
 
-        chatService.processMessage(dto, nickname, startTime)
-            .subscribe();
+        try {
+            chatService.processMessage(dto, nickname, startTime);
+        } catch (CustomException e) {
+            log.error("채팅 처리 중 예외 발생", e);
+        } catch (Exception e) {
+            log.error("알 수 없는 예외 발생", e);
+        }
     }
 
     // 채팅 기록 조회

@@ -10,7 +10,7 @@ import com.chatting.capstone.domain.room.entity.Room;
 import com.chatting.capstone.domain.room.repository.RoomRepository;
 import com.chatting.capstone.domain.user.entity.User;
 import com.chatting.capstone.domain.user.repository.UserRepository;
-import com.chatting.capstone.global.moderation.ClovaService;
+import com.chatting.capstone.global.moderation.AiModerationResponse;
 import com.chatting.capstone.global.response.CustomException;
 import com.chatting.capstone.global.response.ResponseStatus;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -28,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +37,6 @@ public class ChatService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
 
-    private final ClovaService clovaService;
     private final ClovaXClient clovaXClient;
 
     private static final int TIME_WINDOW_MILLIS = 5000;  // 5초
@@ -52,7 +50,7 @@ public class ChatService {
 
     private final Map<String, Long> muteMap = new ConcurrentHashMap<>();
 
-    public ChatResponse save(ChatRequest dto, String filteredContent) {
+    public ChatResponse save(ChatRequest dto, String filteredContent, double maliceScore) {
         validateContent(dto.getContent(), dto.getNickname());
 
         Room room = roomRepository.findById(dto.getRoomId())
@@ -67,6 +65,7 @@ public class ChatService {
             .nickname(dto.getNickname())
             .originalContent(dto.getContent())
             .filteredContent(filteredContent)
+            .maliceScore(maliceScore)
             .createdAt(LocalDateTime.now())
             .build();
 
@@ -77,6 +76,7 @@ public class ChatService {
             .userId(chat.getUser().getId())
             .nickname(chat.getNickname())
             .content(chat.getFilteredContent())
+            .maliceScore(chat.getMaliceScore())
             .createdAt(chat.getCreatedAt())
             .build();
 
@@ -171,49 +171,52 @@ public class ChatService {
         }
     }
 
-    public Mono<Void> processMessage(ChatRequest dto, String nickname, long startTime) {
+    public void processMessage(ChatRequest dto, String nickname, long startTime) {
 
         if (isMuted(nickname)) {
             long remaining = Math.max(1, getMuteRemainingMillis(nickname) / 1000);
 
             publishWarningToUser(nickname, "⛔ 현재 도배로 인해 채팅이 제한되었습니다. 남은 시간: " + remaining + "초");
 
-            return Mono.error(new CustomException(ResponseStatus.MUTED));
+            throw new CustomException(ResponseStatus.MUTED);
         }
 
         if (isSpamming(nickname, dto.getContent())) {
             mute(nickname);
             publishWarningToUser(nickname, "⚠️ 도배로 판단되어 채팅이 30초간 제한됩니다.");
-            return Mono.error(new CustomException(ResponseStatus.SPAM_DETECTED));
+            throw new CustomException(ResponseStatus.SPAM_DETECTED);
         }
 
         validateContent(dto.getContent(), nickname); // 비속어, 글자수 검증
 
         String originalContent = dto.getContent();
-        long appraisalStart = System.currentTimeMillis();
+        String purifiedText = originalContent;
 
-        return clovaService.appraiseSentence(originalContent)
-            .flatMap(isInappropriate -> {
-                long appraisalEnd = System.currentTimeMillis();
-                log.info("[{}] Clova appraisal: {}ms", nickname, appraisalEnd - appraisalStart);
+        double maliceScore = 0.0;
 
-                if ("1".equals(isInappropriate)) {
-                    publishWarningToUser(nickname, "⚠️ 부적절한 표현이 감지되어 자동으로 수정되었습니다.");
-                    return clovaXClient.filterMessageAsync(originalContent)
-                        .map(filteredContent -> save(dto, filteredContent));
-                } else {
-                    return Mono.just(save(dto, originalContent));
-                }
-            })
-            .doOnNext(chatResponse -> {
-                try {
-                    String topic = "chat:room:" + dto.getRoomId();
-                    redisPublisher.publish(topic, chatResponse);
-                } catch (Exception e) {
-                    log.error("Redis 메시지 변환 중 오류", e);
-                }
-            })
-            .then();
+        try {
+            // ClovaXClient 호출
+            AiModerationResponse moderation = clovaXClient.filterMessage(originalContent);
+
+            if (moderation != null && moderation.getPurified_text() != null && !moderation.getPurified_text().isEmpty()) {
+                purifiedText = moderation.getPurified_text();
+            }
+            maliceScore = moderation.getMalice_score();
+        } catch (Exception e) {
+            log.error("ClovaXClient 호출 실패, 원본 텍스트 사용", e);
+        }
+
+        // DB 저장
+        ChatResponse chatResponse = save(dto, purifiedText, maliceScore);// save() 안에서 filteredContent = purifiedText
+
+        // Redis 발행 (항상 filteredContent 사용)
+        try {
+            String topic = "chat:room:" + dto.getRoomId();
+            redisPublisher.publish(topic, chatResponse); // ChatResponse.content는 항상 filteredContent
+            saveChatMessageToRedis(dto.getRoomId(), chatResponse);
+        } catch (Exception e) {
+            log.error("Redis 메시지 발행 오류", e);
+        }
     }
     // 사용자에게 에러 메시지 Redis로 전송
     public void publishErrorToUser(String nickname, String errorMessage) {
