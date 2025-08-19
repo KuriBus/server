@@ -42,7 +42,7 @@ api:
     url: https://api.perplexity.ai
     key: ${PERPLEXITY_KEY}
 ai:
-  moderation-url: http://localhost:8080/moderate # 추후 배포 주소로 변경 바람
+  moderation-url: http://localhost:8000/moderate # 추후 배포 주소로 변경 바람
 
 jwt:
   secret: ${JWT_SECRET_KEY}

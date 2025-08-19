@@ -39,19 +39,16 @@ public class UserService {
         if (userRepository.existsByNickname(nickname)) {
             throw new CustomException(ResponseStatus.NICKNAME_TAKEN);
         }
-        try{
-            // AI 악의성 검열 추가
-            AiModerationResponse usernameCheck = aiModerationService.moderateText(username);
-            if (usernameCheck.isHarmful()) { // 아이디
-                throw new CustomException(ResponseStatus.INVALID_USERNAME);
-            }
 
-            AiModerationResponse nicknameCheck = aiModerationService.moderateText(nickname);
-            if (nicknameCheck.isHarmful()) { // 닉네임
-                throw new CustomException(ResponseStatus.INVALID_NICKNAME);
-            }
-        } catch (Exception e) {
-            throw new CustomException(ResponseStatus.AI_SERVICE_UNAVAILABLE); // AI 서비스 호출 실패
+        // AI 악의성 검열 추가
+        AiModerationResponse usernameCheck = aiModerationService.moderateText(username);
+        if (usernameCheck.isHarmful()) { // 아이디
+            throw new CustomException(ResponseStatus.INVALID_USERNAME);
+        }
+
+        AiModerationResponse nicknameCheck = aiModerationService.moderateText(nickname);
+        if (nicknameCheck.isHarmful()) { // 닉네임
+            throw new CustomException(ResponseStatus.INVALID_NICKNAME);
         }
 
         validateUsername(username);
