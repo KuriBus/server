@@ -1,11 +1,12 @@
 package com.chatting.capstone.domain.user.service;
 
+import com.chatting.capstone.global.moderation.AiModerationResponse;
+import com.chatting.capstone.global.moderation.AiModerationService;
 import com.chatting.capstone.global.response.CustomException;
 import com.chatting.capstone.global.response.ResponseStatus;
 import com.chatting.capstone.domain.user.entity.User;
 import com.chatting.capstone.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
+    private final AiModerationService aiModerationService; // ai 모델을 이용한 욕설 탐지
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -29,12 +30,6 @@ public class UserService {
     //아이디 비밀번호 4글자 이상 같은 문자 허용 X
     private static final int MIN_CONSECUTIVE_SAME_LENGTH = 4;
 
-    // 예시 금지 단어 목록 (더 많은 욕설 포함 가능)
-    // 추후에 욕설이 들어간다면 ai 모델로 검사하는 것은 어떠한지
-    private static final List<String> BANNED_WORDS = List.of(
-        "fuck", "shit", "좆", "씨발", "병신", "fuckyou", "개새", "ㅅㅂ", "ㅂㅅ", "시발", "장애인"
-    );
-
     // 회원가입
     @Transactional
     public void signup(String username, String rawPassword, String nickname, String ipAddress) {
@@ -43,6 +38,17 @@ public class UserService {
         }
         if (userRepository.existsByNickname(nickname)) {
             throw new CustomException(ResponseStatus.NICKNAME_TAKEN);
+        }
+
+        // AI 악의성 검열 추가
+        AiModerationResponse usernameCheck = aiModerationService.moderateText(username);
+        if (usernameCheck.isHarmful()) { // 아이디
+            throw new CustomException(ResponseStatus.INVALID_USERNAME);
+        }
+
+        AiModerationResponse nicknameCheck = aiModerationService.moderateText(nickname);
+        if (nicknameCheck.isHarmful()) { // 닉네임
+            throw new CustomException(ResponseStatus.INVALID_NICKNAME);
         }
 
         validateUsername(username);
@@ -102,12 +108,6 @@ public class UserService {
 
         if (!nickname.matches(NICKNAME_PATTERN)) {
             throw new CustomException(ResponseStatus.INVALID_NICKNAME_FORMAT);
-        }
-
-        for (String banned : BANNED_WORDS) {
-            if (nickname.toLowerCase().contains(banned)) {
-                throw new CustomException(ResponseStatus.PROFANE_NICKNAME);
-            }
         }
     }
 
