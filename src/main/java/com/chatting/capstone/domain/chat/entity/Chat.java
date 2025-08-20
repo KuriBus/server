@@ -50,6 +50,9 @@ public class Chat {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String filteredContent;
 
+    @Column(nullable = false)
+    private double maliceScore;  // 악의성 점수
+
     @CreatedDate
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime createdAt;  //채팅 생성 시간
