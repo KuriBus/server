@@ -68,7 +68,9 @@ public enum ResponseStatus {
 
     REFRESH_TOKEN_COOKIE_SUCCESS(HttpStatus.OK, "토큰 추출이 성공했습니다."),
 
-    TOKEN_REISSUE_SUCCESS(HttpStatus.OK, "토큰이 재발급 되었습니다.");
+    TOKEN_REISSUE_SUCCESS(HttpStatus.OK, "토큰이 재발급 되었습니다."),
+
+    FIND_USER(HttpStatus.OK, "해당 유저를 찾았습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -188,4 +188,22 @@ public class UserController {
         TokenResponse tokenResponse = authService.reissueToken(refreshToken);
         return ResponseEntity.ok(ApiResponse.of(ResponseStatus.REFRESH_TOKEN_COOKIE_SUCCESS, tokenResponse));
     }
+
+    @Operation(
+        summary = "유저 닉네임 조회 (username 기반)",
+        description = "username을 이용해 해당 유저의 닉네임을 조회합니다.",
+        parameters = {
+            @Parameter(name = "username", description = "조회할 유저 ID(username)", required = true, example = "kuriverse123")
+        },
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "닉네임 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "유저를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
+        }
+    )
+    @GetMapping("/nickname")
+    public ResponseEntity<ApiResponse> getNicknameByUsername(@RequestParam String username) {
+        String nickname = userService.findNicknameByUsername(username);
+        return ResponseEntity.ok(ApiResponse.of(ResponseStatus.FIND_USER, nickname));
+    }
 }
