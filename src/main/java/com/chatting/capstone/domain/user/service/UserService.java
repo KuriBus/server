@@ -136,4 +136,10 @@ public class UserService {
             }
         }
     }
+
+    public String findNicknameByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new CustomException(ResponseStatus.USER_NOT_FOUND));
+        return user.getNickname();
+    }
 }

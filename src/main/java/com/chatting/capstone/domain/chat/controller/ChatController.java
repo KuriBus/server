@@ -33,7 +33,7 @@ public class ChatController {
     public void sendMessage(@Payload ChatRequest dto, StompHeaderAccessor accessor) {
         String nickname = dto.getNickname();
         accessor.getSessionAttributes().put("nickname", nickname);
-        System.out.println("Front에서 온 DTO: " + dto);
+
         long startTime = System.currentTimeMillis();
 
         try {
