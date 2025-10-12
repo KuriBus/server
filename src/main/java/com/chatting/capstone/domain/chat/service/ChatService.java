@@ -196,23 +196,26 @@ public class ChatService {
 
         try {
             // ClovaXClient 호출
-            AiModerationResponse moderation = clovaXClient.filterMessage(originalContent);
+            AiModerationResponse moderation = clovaXClient.filterMessage(originalContent + " 순화해줘");
 
-            if (moderation != null && moderation.getPurified_text() != null && !moderation.getPurified_text().isEmpty()) {
-                purifiedText = moderation.getPurified_text();
+            if (moderation != null && moderation.getOutput() != null) {
+                // Output 객체에서 실제 문자열만 꺼내서 사용
+                String aiOutput = moderation.getOutput().getOutput();
+                if (aiOutput != null && !aiOutput.isEmpty()) {
+                    purifiedText = aiOutput;
+                }
             }
-            maliceScore = moderation.getMalice_score();
         } catch (Exception e) {
             log.error("ClovaXClient 호출 실패, 원본 텍스트 사용", e);
         }
 
         // DB 저장
-        ChatResponse chatResponse = save(dto, purifiedText, maliceScore);// save() 안에서 filteredContent = purifiedText
+        ChatResponse chatResponse = save(dto, purifiedText, maliceScore);
 
         // Redis 발행 (항상 filteredContent 사용)
         try {
             String topic = "chat:room:" + dto.getRoomId();
-            redisPublisher.publish(topic, chatResponse); // ChatResponse.content는 항상 filteredContent
+            redisPublisher.publish(topic, chatResponse);
             saveChatMessageToRedis(dto.getRoomId(), chatResponse);
         } catch (Exception e) {
             log.error("Redis 메시지 발행 오류", e);

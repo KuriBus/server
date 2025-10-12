@@ -55,6 +55,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                                 "/api/users/login",
                                 "/api/users/signup",
                                 "/health"
+                            , "agent"  //이건 우선 쓸 때 postman에서 agent를 테스트해서 401때문에 해놨어 후에 로그인 되거나 하면 삭제할게
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

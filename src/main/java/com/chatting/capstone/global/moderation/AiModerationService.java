@@ -14,7 +14,8 @@ public class AiModerationService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${ai.moderation-url}")
+    // url 이름 변경
+    @Value("${ai.agent-url}")
     private String moderationUrl;
 
     public AiModerationResponse moderateText(String text) {
@@ -26,9 +27,9 @@ public class AiModerationService {
 
         try {
             ResponseEntity<AiModerationResponse> response = restTemplate.postForEntity(
-                    moderationUrl,
-                    request,
-                    AiModerationResponse.class
+                moderationUrl,
+                request,
+                AiModerationResponse.class
             );
             return response.getBody();
         } catch (Exception e) {
