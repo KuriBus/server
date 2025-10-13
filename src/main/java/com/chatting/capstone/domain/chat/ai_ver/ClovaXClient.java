@@ -19,33 +19,43 @@ public class ClovaXClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${ai.moderation-url}")
-    private String moderationUrl;
+    @Value("${ai.agent-url}") // ai.agent-url 사용
+    private String agentUrl;
 
     public AiModerationResponse filterMessage(String text) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        Map<String, String> requestBody = Map.of("text", text);
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+        //input 안에 input이 이중 구조라 이렇게 매핑
+        Map<String, Object> payload = Map.of(
+            "input", Map.of("input", text),
+            "config", Map.of()
+        );
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
 
         try {
+            // 반환 타입은 그대로 AiModerationResponse
             ResponseEntity<AiModerationResponse> response = restTemplate.postForEntity(
-                moderationUrl,
+                agentUrl,
                 request,
                 AiModerationResponse.class
             );
 
             AiModerationResponse body = response.getBody();
-            if (body == null) {
-                return new AiModerationResponse(); // 실패 시 빈 객체
+            if (body == null || body.getOutput() == null) {
+                AiModerationResponse fallback = new AiModerationResponse();
+                AiModerationResponse.Output out = new AiModerationResponse.Output(); // 기본 생성자 사용
+                out.setOutput(text); // setter로 값 넣기
+                fallback.setOutput(out);
+                return fallback;
             }
             return body;
         } catch (Exception e) {
-            log.error("ClovaXClient 호출 실패", e);
+            log.error("ClovaXClient 호출 실패, 원본 텍스트 사용", e);
             AiModerationResponse fallback = new AiModerationResponse();
-            fallback.setPurified_text(text); // 예외 시 원본 사용
-            fallback.setMalice_score(0.0);
+            AiModerationResponse.Output out = new AiModerationResponse.Output(); // 기본 생성자
+            out.setOutput(text); // 값 세팅
+            fallback.setOutput(out);
             return fallback;
         }
     }

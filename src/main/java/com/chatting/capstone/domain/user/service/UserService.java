@@ -40,16 +40,17 @@ public class UserService {
             throw new CustomException(ResponseStatus.NICKNAME_TAKEN);
         }
 
-        // AI 악의성 검열 추가
+        // AI 악의성 검열 추가 이쪽을 다른 모델로 해야될 수도 있음 지금 모델 가끔 이상해서...
+        // 일단 건들지 않을게 주석처리만 해놓고
         AiModerationResponse usernameCheck = aiModerationService.moderateText(username);
-        if (usernameCheck.isHarmful()) { // 아이디
-            throw new CustomException(ResponseStatus.INVALID_USERNAME);
-        }
+//        if (usernameCheck.isHarmful()) { // 아이디
+//            throw new CustomException(ResponseStatus.INVALID_USERNAME);
+//        }
 
         AiModerationResponse nicknameCheck = aiModerationService.moderateText(nickname);
-        if (nicknameCheck.isHarmful()) { // 닉네임
-            throw new CustomException(ResponseStatus.INVALID_NICKNAME);
-        }
+//        if (nicknameCheck.isHarmful()) { // 닉네임
+//            throw new CustomException(ResponseStatus.INVALID_NICKNAME);
+//        }
 
         validateUsername(username);
         validatePassword(rawPassword);

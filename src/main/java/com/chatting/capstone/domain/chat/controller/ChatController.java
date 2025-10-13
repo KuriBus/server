@@ -1,13 +1,16 @@
 package com.chatting.capstone.domain.chat.controller;
 
+import com.chatting.capstone.domain.chat.ai_ver.ClovaXClient;
 import com.chatting.capstone.domain.chat.dto.request.ChatRequest;
 import com.chatting.capstone.domain.chat.dto.response.ChatResponse;
 import com.chatting.capstone.domain.chat.service.ChatService;
+import com.chatting.capstone.global.moderation.AiModerationResponse;
 import com.chatting.capstone.global.response.CustomException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -17,6 +20,8 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import com.chatting.capstone.global.response.ResponseStatus;
@@ -27,6 +32,7 @@ import com.chatting.capstone.global.response.ResponseStatus;
 public class ChatController {
 
     private final ChatService chatService;
+    private final ClovaXClient clovaXClient;
 
     // 채팅 전송
     @MessageMapping("/chat.send")
@@ -77,5 +83,15 @@ public class ChatController {
     @MessageExceptionHandler
     public void handleException(Exception e) {
         log.error("WebSocket 메시지 처리 중 오류: ", e);
+    }
+
+    //새로 만든 agent 전용 web사이트에서만 쓸 예정
+    @PostMapping("/agent")
+    public String moderateText(@RequestBody String text) {
+        AiModerationResponse response = clovaXClient.filterMessage(text);
+        if (response == null || response.getOutput() == null) {
+            return text;
+        }
+        return response.getOutput().getOutput(); // String 반환
     }
 }

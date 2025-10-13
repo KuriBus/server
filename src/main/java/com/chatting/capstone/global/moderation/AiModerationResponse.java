@@ -1,6 +1,7 @@
 package com.chatting.capstone.global.moderation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,10 +10,14 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class AiModerationResponse {
-    private String text;
-    private double malice_score;
-    @JsonProperty("is_harmful")
-    private boolean isHarmful;
-    private String confidence;   // 문자열 ("매우 위험", "위험", "보통" 등)
-    private String purified_text;
+    private Output output;
+
+    public Output getOutput() { return output; }
+    public void setOutput(Output output) { this.output = output; }
+
+    public static class Output {
+        private String output;
+        public String getOutput() { return output; }
+        public void setOutput(String output) { this.output = output; }
+    }
 }
